@@ -11,14 +11,24 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
  */
 
 export async function saveClient(clientData) {
-    // Normalizamos el nombre para evitar duplicados triviales pero sin romper esquema
-    const name = clientData.name?.trim() || 'Desconocido';
+    // Normalizamos nombre: minúsculas + trim para evitar duplicados (Venux = venux)
+    const name = (clientData.name?.trim() || 'Desconocido').toLowerCase();
+    
+    // Normalizamos URL: quitamos http(s):// y barra final para que siempre matchee
+    let rawUrl = (clientData.url || '').trim();
+    if (rawUrl.indexOf('://') !== -1) {
+        rawUrl = rawUrl.substring(rawUrl.indexOf('://') + 3);
+    }
+    if (rawUrl.charAt(rawUrl.length - 1) === '/') {
+        rawUrl = rawUrl.substring(0, rawUrl.length - 1);
+    }
+    const url = rawUrl;
     
     const { data, error } = await supabase
         .from('clients')
         .upsert({ 
             name, 
-            url: clientData.url || '',
+            url,
             last_updated: new Date().toISOString()
         }, { onConflict: 'name' })
         .select();
