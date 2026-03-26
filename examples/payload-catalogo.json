@@ -1,0 +1,16 @@
+{
+    "client": {
+        "name": "Argenta Cerámica",
+        "url": "argentaceramica.com",
+        "has_facebook_pixel": true
+    },
+    "intent": "Trackear clic en el botón de descarga de un catálogo PDF",
+    "event_name_suggestion": "file_download",
+    "captured": {
+        "click_element_html": "<a class=\"listado-catalogos__grid__item__descargas\" href=\"/link.php?link=https://cdn.cloudfront.net/CAT_GENERAL_2025.pdf&code=abc123\" target=\"_blank\">Descargar</a>",
+        "parent_html": "<div class=\"listado-catalogos__grid__item\"><h4>Catálogo General 2025</h4><div class=\"listado-catalogos__grid__item__contenido\">...</div></div>",
+        "click_url": "https://argentaceramica.com/link.php?link=...pdf",
+        "page_path": "/descargas/catalogos/",
+        "page_title": "Catálogos - Argenta Cerámica"
+    }
+}

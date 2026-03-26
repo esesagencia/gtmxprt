@@ -1,0 +1,119 @@
+import { createClient } from '@supabase/supabase-js';
+import 'dotenv/config';
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+export const supabase = createClient(supabaseUrl, supabaseKey);
+
+/**
+ * Persistence helpers for GTMXpert
+ */
+
+export async function saveClient(clientData) {
+    // Normalizamos el nombre para evitar duplicados triviales pero sin romper esquema
+    const name = clientData.name?.trim() || 'Desconocido';
+    
+    const { data, error } = await supabase
+        .from('clients')
+        .upsert({ 
+            name, 
+            url: clientData.url || '',
+            last_updated: new Date().toISOString()
+        }, { onConflict: 'name' })
+        .select();
+    
+    if (error) {
+        console.error('[Supabase] Error saving client:', error);
+        throw error;
+    }
+    return data[0];
+}
+
+export async function saveScoutResult(clientId, resultData) {
+    const { data, error } = await supabase
+        .from('scout_results')
+        .insert({
+            client_id: clientId,
+            content: resultData,
+            created_at: new Date().toISOString()
+        })
+        .select();
+    
+    if (error) throw error;
+    return data[0];
+}
+
+export async function saveTrackingPlan(clientId, planData) {
+    const { data, error } = await supabase
+        .from('tracking_plans')
+        .insert({
+            client_id: clientId,
+            content: planData,
+            created_at: new Date().toISOString()
+        })
+        .select();
+    
+    if (error) throw error;
+    return data[0];
+}
+
+export async function getRecentClients() {
+    const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('last_updated', { ascending: false })
+        .limit(10);
+    
+    if (error) throw error;
+    return data;
+}
+
+export async function getLatestPlanForClient(clientId) {
+    const { data, error } = await supabase
+        .from('tracking_plans')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+    
+    if (error) throw error;
+    return data[0]?.content || null;
+}
+
+export async function getLatestScoutForClient(clientId) {
+    const { data, error } = await supabase
+        .from('scout_results')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+    
+    if (error) throw error;
+    return data[0]?.content || null;
+}
+
+export async function getEventInventory(clientId) {
+    const { data, error } = await supabase
+        .from('tracking_plans')
+        .select('content')
+        .eq('client_id', clientId);
+    
+    if (error) throw error;
+    
+    // Aplanamos todos los eventos sugeridos en una sola lista de inventario
+    const inventory = [];
+    data.forEach(plan => {
+        if (plan.content?.suggested_events) {
+            plan.content.suggested_events.forEach(event => {
+                inventory.push({
+                    event_name: event.event_name,
+                    description: event.description,
+                    pois: event.pois?.map(p => p.selector) || []
+                });
+            });
+        }
+    });
+    
+    return inventory;
+}

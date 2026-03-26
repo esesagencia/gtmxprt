@@ -1,0 +1,310 @@
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+
+// ─── Word Document Export ─────────────────────────────────────────────────────
+import { exportToWord } from '../utils/exportWord'
+import { exportToMarkdown, exportToHTML } from '../utils/exportUtils'
+
+// ─── Event Implementation Card ────────────────────────────────────────────────
+function EventImplementation({ impl }) {
+  const [tab, setTab] = useState('implementation')
+  const [openSections, setOpenSections] = useState({ variables: true, trigger: false, tags: false })
+  const toggle = (s) => setOpenSections(p => ({ ...p, [s]: !p[s] }))
+
+  return (
+    <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/8 rounded-2xl overflow-hidden shadow-sm dark:shadow-none transition-colors">
+      <div className="px-6 py-4 border-b border-gray-100 dark:border-white/5 flex items-center gap-4 flex-wrap transition-colors">
+        <span className="font-mono text-brand-boreal font-bold text-sm">{impl.event_name}</span>
+        <span className="text-xs text-gray-500 dark:text-white/20 transition-colors">← /{impl.page || 'varias'}</span>
+        {impl.analysis?.warnings?.length > 0 && (
+          <span className="text-xs bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-2 py-0.5 rounded-full transition-colors">⚠️ {impl.analysis.warnings.length} aviso</span>
+        )}
+      </div>
+      <div className="flex border-b border-gray-100 dark:border-white/5 transition-colors">
+        {['implementation', 'docs', 'validate'].map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`px-5 py-3 text-xs font-display font-bold uppercase tracking-widest transition-colors ${tab === t ? 'text-brand-boreal border-b-2 border-brand-boreal' : 'text-gray-500 dark:text-white/30 hover:text-gray-800 dark:hover:text-white/60'}`}>
+            {t === 'implementation' && '⚙️ Implementación'}
+            {t === 'docs' && '📋 Docs'}
+            {t === 'validate' && '✅ Checklist'}
+          </button>
+        ))}
+      </div>
+      <div className="p-5 space-y-3">
+        {tab === 'implementation' && (
+          <>
+            <div className="bg-blue-500/5 border border-blue-500/10 rounded-xl p-4">
+              <p className="text-xs font-bold text-blue-400/60 uppercase tracking-widest mb-1">Estrategia de captura</p>
+              <p className="text-xs text-gray-600 dark:text-white/60 leading-relaxed transition-colors">{impl.analysis?.capture_strategy || 'No detectada'}</p>
+            </div>
+            {impl.analysis?.warnings?.map((w, i) => (
+              <div key={i} className="bg-yellow-50 dark:bg-yellow-500/5 border border-yellow-200 dark:border-yellow-500/10 rounded-xl p-3 flex gap-2 transition-colors">
+                <span className="text-yellow-600 dark:text-yellow-400/60 shrink-0">⚠️</span>
+                <p className="text-xs text-yellow-700 dark:text-yellow-400/70 leading-relaxed transition-colors">{w}</p>
+              </div>
+            ))}
+            {/* Variables */}
+            <div className="border border-gray-200 dark:border-white/5 rounded-xl overflow-hidden transition-colors">
+              <button onClick={() => toggle('variables')} className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-white/3 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                <span className="text-xs font-display font-bold uppercase tracking-widest text-gray-500 dark:text-white/60 transition-colors">Variables ({impl.variables.length})</span>
+                <span className="text-gray-400 dark:text-white/20 text-xs transition-colors">{openSections.variables ? '▲' : '▼'}</span>
+              </button>
+              {openSections.variables && impl.variables.map((v, i) => (
+                <div key={i} className="px-4 pb-4 border-t border-gray-100 dark:border-white/5 transition-colors">
+                  <div className="flex items-center gap-2 mt-3 mb-2">
+                    <span className="text-xs font-mono text-gray-800 dark:text-white/80 font-bold transition-colors">{v.name}</span>
+                    <span className="text-xs bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white/30 px-2 py-0.5 rounded-lg transition-colors">{v.type}</span>
+                  </div>
+                  <pre className="bg-gray-900 dark:bg-gray-950 text-green-400 text-xs rounded-xl p-4 overflow-x-auto font-mono leading-relaxed border border-gray-200 dark:border-white/5 transition-colors">{v.code}</pre>
+                  <p className="text-xs text-gray-500 dark:text-white/30 mt-2 transition-colors">Devuelve: <span className="text-gray-600 dark:text-white/50 font-mono transition-colors">{v.returns}</span></p>
+                </div>
+              ))}
+            </div>
+            {/* Trigger */}
+            <div className="border border-gray-200 dark:border-white/5 rounded-xl overflow-hidden transition-colors">
+              <button onClick={() => toggle('trigger')} className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-white/3 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                <span className="text-xs font-display font-bold uppercase tracking-widest text-gray-500 dark:text-white/60 transition-colors">Trigger</span>
+                <span className="text-gray-400 dark:text-white/20 text-xs transition-colors">{openSections.trigger ? '▲' : '▼'}</span>
+              </button>
+              {openSections.trigger && (
+                <div className="px-4 pb-4 border-t border-gray-100 dark:border-white/5 transition-colors">
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs mb-2">
+                    <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-3 transition-colors"><p className="text-gray-500 dark:text-white/30 mb-0.5 transition-colors">Nombre</p><p className="text-gray-800 dark:text-white/80 font-mono font-bold transition-colors">{impl.trigger.name}</p></div>
+                    <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-3 transition-colors"><p className="text-gray-500 dark:text-white/30 mb-0.5 transition-colors">Tipo</p><p className="text-gray-800 dark:text-white/80 transition-colors">{impl.trigger.type}</p></div>
+                  </div>
+                  {impl.trigger.conditions.map((c, i) => (
+                    <div key={i} className="bg-gray-100 dark:bg-white/3 rounded-lg p-3 text-xs flex items-center gap-3 mb-1 transition-colors">
+                      <span className="text-gray-600 dark:text-white/40 transition-colors">{c.field}</span>
+                      <span className="text-brand-polar/80 dark:text-brand-boreal/60 font-bold transition-colors">{c.operator}</span>
+                      <span className="text-gray-800 dark:text-white/70 font-mono transition-colors">{c.value}</span>
+                    </div>
+                  ))}
+                  {impl.trigger.notes && <p className="text-xs text-gray-500 dark:text-white/30 italic mt-2 leading-relaxed transition-colors">{impl.trigger.notes}</p>}
+                </div>
+              )}
+            </div>
+            {/* Tags */}
+            <div className="border border-gray-200 dark:border-white/5 rounded-xl overflow-hidden transition-colors">
+              <button onClick={() => toggle('tags')} className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-white/3 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                <span className="text-xs font-display font-bold uppercase tracking-widest text-gray-500 dark:text-white/60 transition-colors">Etiquetas ({impl.tags.length})</span>
+                <span className="text-gray-400 dark:text-white/20 text-xs transition-colors">{openSections.tags ? '▲' : '▼'}</span>
+              </button>
+              {openSections.tags && impl.tags.map((tag, i) => (
+                <div key={i} className="px-4 pb-4 border-t border-gray-100 dark:border-white/5 transition-colors">
+                  <div className="flex items-center gap-2 mt-3 mb-2">
+                    <span className={`text-xs px-2 py-0.5 rounded-lg font-bold transition-colors ${tag.platform === 'GA4' ? 'bg-orange-100 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400' : 'bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'}`}>{tag.platform}</span>
+                    <span className="text-xs font-mono text-gray-800 dark:text-white/80 font-bold transition-colors">{tag.name}</span>
+                  </div>
+                  {(tag.parameters || tag.object_properties) && (
+                    <table className="w-full text-xs mb-2">
+                      <tbody>
+                        {(tag.parameters || tag.object_properties).map((p, j) => (
+                          <tr key={j} className={j % 2 === 0 ? 'bg-gray-50 dark:bg-white/3' : 'transition-colors'}>
+                            <td className="py-1.5 px-3 text-gray-500 dark:text-white/40 rounded-l-lg w-1/3 transition-colors">{p.key}</td>
+                            <td className="py-1.5 px-3 text-gray-800 dark:text-white/70 font-mono transition-colors">{p.value}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  {tag.justification && <p className="text-xs text-gray-500 dark:text-white/40 italic leading-relaxed bg-gray-50 dark:bg-white/3 rounded-lg px-3 py-2 transition-colors">{tag.justification}</p>}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        {tab === 'docs' && (
+          <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-transparent rounded-xl p-5 shadow-sm dark:shadow-none transition-colors">
+            <p className="text-xs font-bold text-gray-400 dark:text-white/30 uppercase tracking-widest mb-3 transition-colors">Justificación estratégica</p>
+            <p className="text-sm text-gray-700 dark:text-white/70 leading-relaxed transition-colors">
+              {impl.documentation?.rationale || impl.rationale || 'No hay justificación estratégica disponible.'}
+            </p>
+          </div>
+        )}
+        {tab === 'validate' && (
+          <div className="space-y-0 bg-white dark:bg-transparent rounded-xl border border-gray-200 dark:border-transparent p-2 dark:p-0 transition-colors">
+            {(impl.documentation?.checklist || impl.checklist || []).length > 0 ? (
+              (impl.documentation?.checklist || impl.checklist).map((item, i) => (
+                <div key={i} className={`flex items-start gap-3 py-3 border-b border-gray-100 dark:border-white/5 last:border-0 ${i % 2 === 0 ? '' : 'bg-gray-50 dark:bg-white/2'} px-2 rounded transition-colors`}>
+                  <span className="text-brand-polar dark:text-brand-boreal/50 mt-0.5 shrink-0 transition-colors">☐</span>
+                  <p className="text-xs text-gray-600 dark:text-white/60 leading-relaxed transition-colors">{item}</p>
+                </div>
+              ))
+            ) : (
+              <div className="p-10 text-center opacity-40 dark:opacity-30 text-xs text-gray-500 dark:text-white transition-colors">No hay tareas de validación registradas.</div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Main Plan View ───────────────────────────────────────────────────────────
+export default function PlanView({ plan, navigate }) {
+  const [exporting, setExporting] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [activeImpls, setActiveImpls] = useState([])
+  const [error, setError] = useState(null)
+  const [activeIdx, setActiveIdx] = useState(0)
+
+  useEffect(() => {
+    // Si ya tenemos eventos sugeridos (cargado desde el historial), no re-generamos
+    if (plan.suggested_events && plan.suggested_events.length > 0) {
+      setActiveImpls(plan.suggested_events)
+      setLoading(false)
+      return
+    }
+
+    async function fetchPlan() {
+      try {
+        const combinedHtml = (plan.pages || []).map(p => `<!-- PAGE: /${p.name} -->\n${p.html}`).join('\n\n')
+        
+        const res = await fetch('http://localhost:3000/api/plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client: plan.client,
+            eventsToImplement: plan.selected,
+            htmlContent: combinedHtml
+          })
+        })
+        const data = await res.json()
+        if (res.ok) {
+          setActiveImpls(data.suggested_events || [])
+        } else {
+          setError(data.error)
+        }
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchPlan()
+  }, [plan])
+
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      await exportToWord(activeImpls, plan?.client?.name || 'Cliente')
+    } catch (e) {
+      console.error('Export error:', e)
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const client = plan?.client || {}
+
+  return (
+    <div className="px-8 py-10 max-w-5xl mx-auto">
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <button onClick={() => navigate('scout', client)} className="text-xs text-gray-400 dark:text-white/30 hover:text-brand-polar dark:hover:text-brand-boreal transition-colors font-bold">← Scout</button>
+          <span className="text-gray-300 dark:text-white/10 transition-colors">/</span>
+          <span className="text-xs text-gray-400 dark:text-white/40 transition-colors">Plan de implementación</span>
+        </div>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs text-brand-boreal font-display font-bold uppercase tracking-widest mb-2">
+              {client.name || 'Cliente'} · {client.url || ''}
+            </p>
+            <h1 className="text-3xl font-display font-black text-gray-900 dark:text-white mb-1 transition-colors">Plan de Tracking</h1>
+            <p className="text-gray-500 dark:text-white/40 text-sm transition-colors">{loading ? '...' : activeImpls.length} eventos · Gemini 2.5 Pro · Estándar ESES v1.0</p>
+          </div>
+          {!loading && !error && activeImpls.length > 0 && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => exportToMarkdown(activeImpls, client.name)}
+                className="shrink-0 px-4 py-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/60 font-display font-bold uppercase tracking-widest rounded-xl text-[10px] hover:bg-gray-100 dark:hover:bg-white/10 transition-all shadow-sm dark:shadow-none"
+              >
+                MD
+              </button>
+              <button
+                onClick={() => exportToHTML(activeImpls, client.name)}
+                className="shrink-0 px-4 py-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/60 font-display font-bold uppercase tracking-widest rounded-xl text-[10px] hover:bg-gray-100 dark:hover:bg-white/10 transition-all shadow-sm dark:shadow-none"
+              >
+                HTML
+              </button>
+              <button
+                onClick={handleExport}
+                disabled={exporting}
+                className="shrink-0 flex items-center gap-2 px-5 py-3 bg-brand-boreal text-brand-carbon font-display font-black uppercase tracking-widest rounded-xl text-xs hover:shadow-xl hover:shadow-brand-boreal/20 transition-all disabled:opacity-50"
+              >
+                {exporting ? (
+                  <>
+                    <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }} className="inline-block">⏳</motion.span>
+                    Exportando...
+                  </>
+                ) : (
+                  <>📄 Word</>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      </motion.div>
+
+      {loading && (
+        <div className="flex flex-col items-center justify-center py-24">
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }} className="w-12 h-12 rounded-full border-2 border-brand-boreal/20 border-t-brand-boreal mb-6" />
+          <p className="text-gray-700 dark:text-white/60 text-sm font-display font-bold transition-colors">Gemini 2.5 Pro generando implementación...</p>
+          <p className="text-gray-500 dark:text-white/20 text-xs mt-1 transition-colors">Estructurando dataLayer, redactando estrategias y conectando {plan?.selected?.length || 0} eventos</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-5 text-center">
+          <p className="text-red-400 font-bold mb-1">Error generando el plan</p>
+          <p className="text-red-400/60 text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Event Tabs navigation */}
+      {!loading && !error && activeImpls.length > 0 && (
+        <>
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-1 custom-scrollbar">
+            {activeImpls.map((impl, i) => (
+          <button
+            key={i}
+            onClick={() => setActiveIdx(i)}
+            className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-display font-bold uppercase tracking-widest transition-all ${activeIdx === i ? 'bg-brand-boreal text-brand-carbon shadow-md' : 'bg-white dark:bg-white/5 text-gray-500 dark:text-white/40 hover:text-gray-900 dark:hover:text-white/70 hover:bg-gray-50 dark:hover:bg-white/10 border border-gray-200 dark:border-white/8 shadow-sm dark:shadow-none'}`}
+          >
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-black ${activeIdx === i ? 'bg-brand-carbon/20' : 'bg-gray-100 dark:bg-white/10'}`}>{i + 1}</span>
+            <span className="font-mono normal-case">{impl.event_name}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Active implementation */}
+      <AnimatePresence mode="wait">
+        <motion.div key={activeIdx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15 }}>
+          <EventImplementation impl={activeImpls[activeIdx]} />
+        </motion.div>
+          </AnimatePresence>
+
+          {/* Prev/Next navigation */}
+          <div className="flex items-center justify-between mt-6">
+            <button
+              onClick={() => setActiveIdx(i => Math.max(0, i - 1))}
+              disabled={activeIdx === 0}
+              className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white disabled:opacity-20 transition-colors"
+            >
+              ← Evento anterior
+            </button>
+            <span className="text-xs text-gray-400 dark:text-white/20 transition-colors">{activeIdx + 1} / {activeImpls.length}</span>
+            <button
+              onClick={() => setActiveIdx(i => Math.min(activeImpls.length - 1, i + 1))}
+              disabled={activeIdx === activeImpls.length - 1}
+              className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white disabled:opacity-20 transition-colors"
+            >
+              Evento siguiente →
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
