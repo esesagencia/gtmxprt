@@ -33,6 +33,23 @@ function EventImplementation({ impl }) {
       <div className="p-5 space-y-3">
         {tab === 'implementation' && (
           <>
+            {impl.setup?.custom_dimensions?.length > 0 && (
+              <div className="bg-purple-500/5 border border-purple-500/10 rounded-xl p-4 mb-3">
+                <p className="text-xs font-bold text-purple-400/80 dark:text-purple-400/60 uppercase tracking-widest mb-1">Paso 0: Dimensiones GA4</p>
+                <p className="text-[10px] text-gray-500 dark:text-white/40 mb-3">{impl.setup.notes || 'Crea estas dimensiones personalizadas en GA4 antes de publicar.'}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {impl.setup.custom_dimensions.map((dim, i) => (
+                    <div key={i} className="flex flex-col bg-white dark:bg-white/5 p-2 rounded-lg border border-gray-100 dark:border-white/5 shadow-sm dark:shadow-none transition-colors">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-mono text-[11px] font-bold text-gray-800 dark:text-white/80 truncate pr-2 max-w-[70%]">{dim.parameter}</span>
+                        <span className="text-[9px] bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-300 font-bold px-1.5 py-0.5 rounded uppercase">{dim.scope}</span>
+                      </div>
+                      <span className="text-[10px] text-gray-500 dark:text-white/40 leading-tight">{dim.description}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="bg-blue-500/5 border border-blue-500/10 rounded-xl p-4">
               <p className="text-xs font-bold text-blue-400/60 uppercase tracking-widest mb-1">Estrategia de captura</p>
               <p className="text-xs text-gray-600 dark:text-white/60 leading-relaxed transition-colors">{impl.analysis?.capture_strategy || 'No detectada'}</p>

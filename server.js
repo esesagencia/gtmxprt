@@ -20,17 +20,17 @@ app.get('/api/clients', async (req, res) => {
   }
 })
 
-// 0b. Endpoint: Obtener el último plan de un cliente
+// 0b. Endpoint: Obtener todos los planes consolidados de un cliente
 app.get('/api/clients/:id/latest-plan', async (req, res) => {
   try {
-    console.log(`[API] Buscando último plan para cliente ID: ${req.params.id}`)
-    const plan = await db.getLatestPlanForClient(req.params.id)
+    console.log(`[API] Buscando todos los planes para cliente ID: ${req.params.id}`)
+    const plan = await db.getAllPlansForClient(req.params.id)
     if (plan && plan.suggested_events) {
-      console.log(`[API] Plan encontrado para ID: ${req.params.id} (${plan.suggested_events.length} eventos)`)
+      console.log(`[API] Planes agregados para ID: ${req.params.id} (${plan.suggested_events.length} eventos totales)`)
     } else if (plan) {
-      console.log(`[API] Plan hallado pero MALFORMADO (sin suggested_events) para ID: ${req.params.id}`)
+      console.log(`[API] Planes hallados pero MALFORMADOS (sin suggested_events) para ID: ${req.params.id}`)
     } else {
-      console.log(`[API] No se encontró plan para ID: ${req.params.id}`)
+      console.log(`[API] No se encontraron planes para ID: ${req.params.id}`)
     }
     res.json(plan)
   } catch (error) {

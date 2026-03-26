@@ -69,16 +69,27 @@ export async function getRecentClients() {
     return data;
 }
 
-export async function getLatestPlanForClient(clientId) {
+export async function getAllPlansForClient(clientId) {
     const { data, error } = await supabase
         .from('tracking_plans')
         .select('*')
         .eq('client_id', clientId)
-        .order('created_at', { ascending: false })
-        .limit(1);
+        .order('created_at', { ascending: false });
     
     if (error) throw error;
-    return data[0]?.content || null;
+    if (!data || data.length === 0) return null;
+    
+    // El "plan principal" será el más reciente para heredar propiedades base
+    const combinedPlan = { ...data[0].content, suggested_events: [] };
+    
+    // Combinamos todos los eventos sugeridos de todos los planes generados
+    data.forEach(row => {
+        if (row.content?.suggested_events) {
+            combinedPlan.suggested_events.push(...row.content.suggested_events);
+        }
+    });
+    
+    return combinedPlan;
 }
 
 export async function getLatestScoutForClient(clientId) {
