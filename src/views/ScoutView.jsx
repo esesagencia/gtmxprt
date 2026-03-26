@@ -110,7 +110,7 @@ export default function ScoutView({ navigate, client }) {
       // Concatenate all pages HTML with a small separator
       const combinedHtml = pages.map(p => `<!-- PAGE: /${p.name} -->\n${p.html}`).join('\n\n')
       
-      const res = await fetch('http://localhost:3000/api/scout', {
+      const res = await fetch('/api/scout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,

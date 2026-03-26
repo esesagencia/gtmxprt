@@ -15,7 +15,7 @@ export default function DashboardHome({ navigate }) {
   useEffect(() => {
     async function fetchClients() {
       try {
-        const res = await fetch('http://localhost:3000/api/clients')
+        const res = await fetch('/api/clients')
         const data = await res.json()
         if (Array.isArray(data)) {
           setClients(data)
@@ -33,7 +33,7 @@ export default function DashboardHome({ navigate }) {
     try {
       setLoading(true)
       // 1. Intentar cargar Plan
-      const planRes = await fetch(`http://localhost:3000/api/clients/${client.id}/latest-plan`)
+      const planRes = await fetch(`/api/clients/${client.id}/latest-plan`)
       const plan = await planRes.json()
       
       if (plan && plan.suggested_events) {
@@ -42,7 +42,7 @@ export default function DashboardHome({ navigate }) {
       }
 
       // 2. Si no hay plan, intentar cargar Scout Result
-      const scoutRes = await fetch(`http://localhost:3000/api/clients/${client.id}/latest-scout`)
+      const scoutRes = await fetch(`/api/clients/${client.id}/latest-scout`)
       const scout = await scoutRes.json()
 
       if (scout) {

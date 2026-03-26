@@ -177,7 +177,7 @@ export default function PlanView({ plan, navigate }) {
       try {
         const combinedHtml = (plan.pages || []).map(p => `<!-- PAGE: /${p.name} -->\n${p.html}`).join('\n\n')
         
-        const res = await fetch('http://localhost:3000/api/plan', {
+        const res = await fetch('/api/plan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
