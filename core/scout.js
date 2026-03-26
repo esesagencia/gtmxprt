@@ -14,7 +14,8 @@ REGLAS DE ORO:
    - No sugieras eventos que ya existan en el inventario para los mismos selectores/elementos.
    - Si detectas algo que parece nuevo pero el selector CSS ya está en el inventario, omítelo.
    - Tu objetivo es identificar SOLO lo que falta por trackear.
-5. FORMATO: Devuelve un JSON con una lista de "suggested_events".
+5. FORMULARIOS (CRÍTICO): Si detectas un formulario que no esté en el inventario, DEBES EXIGIR SIEMPRE DOS EVENTOS separados en el array: uno para iniciar ("begin_form") y otro para completar ("generate_lead").
+6. FORMATO: Devuelve un JSON con una lista de "suggested_events".
 
 ESTRUCTURA DEL OUTPUT:
 {
