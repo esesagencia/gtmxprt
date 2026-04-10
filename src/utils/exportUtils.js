@@ -69,99 +69,275 @@ export function exportToMarkdown(events, clientName) {
 }
 
 export function exportToHTML(events, clientName) {
+    const today = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
     let html = `
     <!DOCTYPE html>
-    <html>
+    <html lang="es">
     <head>
-        <title>Tracking Plan: ${clientName}</title>
+        <meta charset="UTF-8">
+        <title>Plan de Tracking: ${clientName}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Work+Sans:wght@700;800;900&display=swap" rel="stylesheet">
         <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1B1B1A; max-width: 900px; margin: 0 auto; padding: 60px 40px; background: #F8F8F8; }
-            .card { background: white; border: 1px solid #E5E5E5; border-radius: 16px; padding: 40px; margin-bottom: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
-            header { margin-bottom: 60px; border-bottom: 3px solid #82FF7A; padding-bottom: 20px; }
-            h1 { font-size: 32px; font-weight: 900; margin: 0; color: #1B1B1A; }
-            h2 { font-size: 24px; font-weight: 900; color: #1B1B1A; margin-top: 0; border-left: 5px solid #82FF7A; padding-left: 15px; }
-            h3 { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #888; margin-top: 30px; margin-bottom: 10px; }
-            h4 { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
-            .rationale { background: #F0FFF0; padding: 20px; border-radius: 12px; font-style: italic; border: 1px solid #D1F2D1; margin: 20px 0; }
-            .strategy { background: #F0F7FF; padding: 15px; border-radius: 8px; border-left: 4px solid #0070F3; margin-bottom: 25px; font-size: 14px; }
-            pre { background: #1B1B1A; color: #82FF7A; padding: 20px; border-radius: 12px; overflow-x: auto; font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 13px; line-height: 1.5; }
-            table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 14px; }
-            th, td { border-bottom: 1px solid #EEE; padding: 12px 15px; text-align: left; }
-            th { background-color: #FAFAFA; color: #666; font-weight: 700; }
-            .tag-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; margin-right: 8px; text-transform: uppercase; }
+            :root {
+                --brand-green: #82FF7A;
+                --brand-dark: #1B1B1A;
+                --brand-gray: #F8F8F8;
+                --text-main: #1B1B1A;
+                --text-muted: #666666;
+                --border-color: #EEEEEE;
+            }
+            
+            * { box-sizing: border-box; }
+            body { 
+                font-family: 'Inter', -apple-system, sans-serif; 
+                line-height: 1.6; 
+                color: var(--text-main); 
+                max-width: 1000px; 
+                margin: 0 auto; 
+                padding: 80px 40px; 
+                background: var(--brand-gray); 
+            }
+            
+            header { 
+                margin-bottom: 80px; 
+                border-bottom: 4px solid var(--brand-green); 
+                padding-bottom: 40px; 
+            }
+            
+            h1 { 
+                font-family: 'Work Sans', sans-serif; 
+                font-size: 48px; 
+                font-weight: 900; 
+                margin: 0; 
+                letter-spacing: -0.02em;
+                line-height: 1.1;
+                color: var(--brand-dark);
+            }
+            
+            .subtitle {
+                font-size: 18px;
+                color: var(--text-muted);
+                margin-top: 10px;
+                font-weight: 500;
+            }
+
+            .card { 
+                background: white; 
+                border: 1px solid var(--border-color); 
+                border-radius: 24px; 
+                padding: 60px; 
+                margin-bottom: 60px; 
+                box-shadow: 0 10px 40px rgba(0,0,0,0.02); 
+                position: relative;
+                overflow: hidden;
+            }
+
+            .card::before {
+                content: "";
+                position: absolute;
+                top: 0; left: 0; width: 100%; height: 8px;
+                background: var(--brand-green);
+                opacity: 0.3;
+            }
+            
+            h2 { 
+                font-family: 'Work Sans', sans-serif;
+                font-size: 28px; 
+                font-weight: 800; 
+                color: var(--brand-dark); 
+                margin-top: 0; 
+                margin-bottom: 25px;
+                display: flex;
+                align-items: center;
+                gap: 15px;
+            }
+
+            .event-number {
+                background: var(--brand-dark);
+                color: var(--brand-green);
+                width: 40px; height: 40px;
+                display: flex; align-items: center; justify-content: center;
+                border-radius: 50%;
+                font-size: 18px;
+                font-weight: 900;
+            }
+            
+            .page-path {
+                display: inline-block;
+                background: var(--brand-gray);
+                padding: 6px 12px;
+                border-radius: 8px;
+                font-family: monospace;
+                font-size: 13px;
+                margin-bottom: 30px;
+            }
+
+            h3 { 
+                font-family: 'Work Sans', sans-serif;
+                font-size: 13px; 
+                font-weight: 800; 
+                text-transform: uppercase; 
+                letter-spacing: 0.15em; 
+                color: var(--text-muted); 
+                margin-top: 45px; 
+                margin-bottom: 15px;
+                border-bottom: 1px solid var(--border-color);
+                padding-bottom: 8px;
+            }
+
+            .rationale { 
+                background: #F0FFF0; 
+                padding: 30px; 
+                border-radius: 16px; 
+                border-left: 6px solid var(--brand-green); 
+                margin: 30px 0;
+            }
+            
+            .strategy { 
+                background: #F0F7FF; 
+                padding: 20px; 
+                border-radius: 12px; 
+                border-left: 6px solid #0070F3; 
+                margin-bottom: 30px; 
+                font-size: 15px; 
+            }
+
+            pre { 
+                background: var(--brand-dark); 
+                color: var(--brand-green); 
+                padding: 25px; 
+                border-radius: 16px; 
+                overflow-x: auto; 
+                font-family: "SFMono-Regular", Consolas, monospace; 
+                font-size: 14px; 
+                line-height: 1.6; 
+                margin: 15px 0;
+            }
+
+            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            th, td { border-bottom: 1px solid var(--border-color); padding: 16px 20px; text-align: left; }
+            th { background-color: var(--brand-gray); color: var(--text-muted); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+            
+            .tag-badge { 
+                display: inline-block; 
+                padding: 4px 12px; 
+                border-radius: 6px; 
+                font-size: 11px; 
+                font-weight: 800; 
+                margin-right: 10px; 
+                text-transform: uppercase; 
+                letter-spacing: 0.05em;
+            }
             .ga4 { background: #FFEDD5; color: #EA580C; }
             .facebook { background: #DBEAFE; color: #2563EB; }
-            .checklist-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; font-size: 14px; }
-            .checkbox { width: 16px; height: 16px; border: 2px solid #82FF7A; border-radius: 4px; flex-shrink: 0; margin-top: 3px; }
-            .footer { text-align: center; font-size: 12px; color: #AAA; margin-top: 80px; }
+            
+            .checklist-item { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 12px; font-size: 15px; }
+            .checkbox { width: 20px; height: 20px; border: 2px solid var(--brand-green); border-radius: 6px; flex-shrink: 0; margin-top: 2px; }
+            
+            .footer { 
+                text-align: center; 
+                font-size: 13px; 
+                color: var(--text-muted); 
+                margin-top: 100px; 
+                padding-top: 40px;
+                border-top: 1px solid var(--border-color);
+            }
+
+            @media print {
+                body { padding: 0; background: white; }
+                .card { box-shadow: none; border: 1px solid #eee; break-inside: avoid; }
+            }
         </style>
     </head>
     <body>
         <header>
-            <h1>GTMXpert · ${clientName}</h1>
-            <p><strong>Tracking Plan Implementation Guide</strong> · ${new Date().toLocaleDateString()}</p>
+            <h1>Guía de Etiquetado GTM</h1>
+            <div class="subtitle">${clientName} · ${today}</div>
         </header>
     `;
 
     events.forEach((event, index) => {
         html += `
         <div class="card">
-            <h2>${index + 1}. ${event.event_name || 'Event'}</h2>
-            <p><small>Página: <code>${event.page || 'Home / Global'}</code></small></p>
+            <h2>
+                <div class="event-number">${index + 1}</div>
+                ${event.event_name || 'Evento'}
+            </h2>
+            <div class="page-path">Contexto: ${event.page || 'Global'}</div>
             
             <div class="rationale">
-                <strong>Justificación Estratégica:</strong><br>
+                <strong style="display:block; margin-bottom:8px; font-family:'Work Sans'; text-transform:uppercase; font-size:12px; letter-spacing:0.1em;">Justificación Estratégica</strong>
                 ${event.documentation?.rationale || event.rationale || 'N/A'}
             </div>
 
             <div class="strategy">
-                <strong>Estrategia de Captura:</strong><br>
+                <strong style="display:block; margin-bottom:5px;">Estrategia de Captura:</strong>
                 ${event.analysis?.capture_strategy || 'N/A'}
             </div>
 
-            <div class="section">
-                <h3>Variables JavaScript</h3>
+            <section>
+                <h3>1. Variables JavaScript</h3>
                 ${(event.variables || []).map(v => `
-                    <div style="margin-bottom: 20px;">
-                        <strong>${v.name || 'N/A'}</strong> <span style="color:#888; font-size: 12px;">(${v.type || 'N/A'})</span>
-                        <pre><code>${v.code || '// Empty'}</code></pre>
-                        <p style="font-size: 12px; color: #666;">Devuelve: <code>${v.returns || 'N/A'}</code></p>
+                    <div style="margin-bottom: 30px;">
+                        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;">
+                            <strong style="color:var(--brand-dark); font-size:16px;">${v.name || 'N/A'}</strong>
+                            <span style="color:var(--text-muted); font-size: 12px; font-weight:600;">[${v.type || 'N/A'}]</span>
+                        </div>
+                        <pre><code>${v.code || '// Sin código'}</code></pre>
+                        <div style="font-size: 13px; color: var(--text-muted); font-style:italic;">
+                            &rarr; Devuelve: <code style="color:var(--brand-dark); font-weight:700;">${v.returns || 'N/A'}</code>
+                        </div>
                     </div>
                 `).join('')}
-            </div>
+            </section>
 
-            <div class="section">
-                <h3>Trigger: ${event.trigger?.name || 'N/A'}</h3>
-                <p style="font-size: 14px; margin-bottom: 5px;">Tipo: <code>${event.trigger?.type || 'N/A'}</code></p>
+            <section>
+                <h3>2. Trigger: ${event.trigger?.name || 'N/A'}</h3>
+                <p style="font-size: 14px; margin-bottom: 10px;">Tipo: <strong>${event.trigger?.type || 'N/A'}</strong></p>
                 <table>
-                    <tr><th>Campo</th><th>Operador</th><th>Valor</th></tr>
-                    ${(event.trigger?.conditions || []).map(c => `<tr><td>${c.field || ''}</td><td>${c.operator || ''}</td><td><code>${c.value || ''}</code></td></tr>`).join('')}
+                    <thead>
+                        <tr><th>Campo</th><th>Operador</th><th>Valor</th></tr>
+                    </thead>
+                    <tbody>
+                        ${(event.trigger?.conditions || []).map(c => `<tr><td>${c.field || ''}</td><td>${c.operator || ''}</td><td><code>${c.value || ''}</code></td></tr>`).join('')}
+                    </tbody>
                 </table>
-                ${event.trigger?.notes ? `<p style="font-size: 12px; color: #888; font-style: italic;">Nota: ${event.trigger.notes}</p>` : ''}
-            </div>
+                ${event.trigger?.notes ? `<p style="font-size: 13px; color: var(--text-muted); font-style: italic; background:#fcfcfc; padding:10px; border-radius:8px;">${event.trigger.notes}</p>` : ''}
+            </section>
 
-            <div class="section">
-                <h3>Etiquetas y Píxeles</h3>
+            <section>
+                <h3>3. Etiquetas y Píxeles</h3>
                 ${(event.tags || []).map(t => {
                     const tParams = t.parameters || t.object_properties || [];
+                    const platformClass = (t.platform || '').toLowerCase();
                     return `
-                    <div style="margin-bottom: 25px; border-bottom: 1px dashed #EEE; padding-bottom: 15px;">
-                        <span class="tag-badge ${(t.platform || '').toLowerCase()}">${t.platform || ''}</span>
-                        <strong>${t.name || ''}</strong>
+                    <div style="margin-bottom: 40px; border-bottom: 1px dashed var(--border-color); padding-bottom: 30px; last-child:border-0;">
+                        <div style="margin-bottom:15px;">
+                            <span class="tag-badge ${platformClass}">${t.platform || ''}</span>
+                            <strong style="font-family:'Work Sans'; font-size:18px;">${t.name || ''}</strong>
+                        </div>
                         ${tParams.length > 0 ? `
                         <table>
-                            <tr><th style="width: 40%;">Parámetro</th><th>Valor</th></tr>
-                            ${tParams.map(p => `<tr><td>${p.key || ''}</td><td><code>${p.value || ''}</code></td></tr>`).join('')}
-                        </table>` : '<p><small>Sin parámetros específicos.</small></p>'}
-                        ${t.justification ? `<p style="font-size: 12px; color: #777; background: #FAFAFA; padding: 10px; border-radius: 6px;">${t.justification}</p>` : ''}
+                            <thead>
+                                <tr><th style="width: 35%;">Parámetro / Propiedad</th><th>Valor / Variable GTM</th></tr>
+                            </thead>
+                            <tbody>
+                                ${tParams.map(p => `<tr><td>${p.key || ''}</td><td><code>${p.value || ''}</code></td></tr>`).join('')}
+                            </tbody>
+                        </table>` : '<p style="font-size:13px; color:var(--text-muted);">Sin parámetros específicos.</p>'}
+                        ${t.justification ? `<div style="font-size: 13px; color: #555; background: var(--brand-gray); padding: 15px; border-radius: 10px; margin-top:15px;">
+                            <strong>Justificación:</strong> ${t.justification}
+                        </div>` : ''}
                     </div>
                     `;
                 }).join('')}
-            </div>
+            </section>
 
-            <div class="section">
-                <h3>Checklist de Validación</h3>
-                <div style="margin-top: 15px;">
+            <section>
+                <h3>4. Checklist de Validación</h3>
+                <div style="margin-top: 20px;">
                     ${(event.documentation?.checklist || event.checklist || []).map(item => `
                         <div class="checklist-item">
                             <div class="checkbox"></div>
@@ -169,14 +345,15 @@ export function exportToHTML(events, clientName) {
                         </div>
                     `).join('')}
                 </div>
-            </div>
+            </section>
         </div>
         `;
     });
 
     html += `
         <div class="footer">
-            Generado por GTMXpert (ESES Agency) · Standard v1.0
+            Generado por <strong>GTMXpert</strong> &middot; ESES Agency &middot; Motor Estándar v1.0<br>
+            <span style="font-size:11px; opacity:0.7; margin-top:10px; display:block;">&copy; ${new Date().getFullYear()} Documento estratégico confidencial para ${clientName}</span>
         </div>
     </body></html>`;
 
@@ -184,6 +361,6 @@ export function exportToHTML(events, clientName) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Tracking_Plan_${clientName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.html`;
+    a.download = `GTMXpert_Plan_${clientName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.html`;
     a.click();
 }

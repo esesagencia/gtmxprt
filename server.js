@@ -4,10 +4,40 @@ import 'dotenv/config'
 import { scoutPage } from './core/scout.js'
 import { generateImplementation } from './core/engine.js'
 import * as db from './core/supabase.js'
+import { slimHTML } from './core/slim-utils.js'
+
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const app = express()
 app.use(cors())
 app.use(express.json({ limit: '50mb' }))
+
+// Retry wrapper for LLM calls
+async function callLLMWithRetry(systemPrompt, payload, retries = 3) {
+  let attempt = 0;
+  while (attempt < retries) {
+    try {
+      const provider = process.env.LLM_PROVIDER === 'claude' ? (await import('./core/llm-adapters/claude.js')) : (await import('./core/llm-adapters/gemini.js'));
+      return await provider.callLLM(systemPrompt, payload);
+    } catch (error) {
+      attempt++;
+      if (attempt >= retries || !error.message.includes('503')) {
+        throw error;
+      }
+      const delay = Math.pow(2, attempt) * 1000;
+      console.log(`[LLM] 503 error, retrying in ${delay}ms (attempt ${attempt}/${retries})...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+}
+
+// Servir archivos estáticos del frontend en producción
+const distPath = path.join(__dirname, 'dist')
+app.use(express.static(distPath))
 
 // 0. Endpoint: Obtener clientes recientes de Supabase
 app.get('/api/clients', async (req, res) => {
@@ -95,65 +125,94 @@ app.post('/api/scout', async (req, res) => {
   }
 })
 
-// 2. Endpoint: Genera la implementación de los eventos seleccionados usando el Engine core
-app.post('/api/plan', async (req, res) => {
+// 2. Endpoint: Genera la implementación de un único evento (Granular)
+app.post('/api/plan/event', async (req, res) => {
   try {
-    const { intent, client, eventsToImplement, htmlContent } = req.body
+    const { client, eventName, htmlContent } = req.body
     
-    if (!eventsToImplement || !eventsToImplement.length) {
-      return res.status(400).json({ error: 'No events selected' })
-    }
+    if (!eventName) return res.status(400).json({ error: 'Falta eventName' })
 
-    console.log(`[API] Solicitud de Plan recibida para ${eventsToImplement.length} eventos de ${client?.name}`)
+    console.log(`[API] Generando plan para evento INDIVIDUAL: ${eventName} de ${client?.name}`)
     
-    const implementations = []
-
-    for (const eventName of eventsToImplement) {
-      console.log(`[API] Generando plan para evento: ${eventName}`)
-      const payload = {
-        client,
-        intent: `Produce a complete tracking plan implementation for the event: ${eventName}. Make sure to include all variables, trigger, tags, and validation checklist.`,
-        captured: {
-          click_element_html: htmlContent || '<p>HTML Context lost in Scout transfer. Derive from standard knowledge.</p>'
-        }
+    const payload = {
+      client,
+      intent: `Produce a complete tracking plan implementation for the event: ${eventName}. Make sure to include all variables, trigger, tags, and validation checklist.`,
+      captured: {
+        click_element_html: htmlContent || '<p>HTML Context lost. Derive from standard knowledge.</p>'
       }
-      
-      const impl = await generateImplementation(payload)
-      impl.event_name = eventName
-      impl.page = client?.url ? `/${client.url.split('/').slice(1).join('/') || ''}` : "Global"
-      
-      // Intentar extraer una página más específica si hay contexto de varias páginas
-      if (htmlContent && htmlContent.indexOf('<!-- PAGE: ') !== -1) {
-        const marker = '<!-- PAGE: ';
-        const start = htmlContent.indexOf(marker);
-        if (start !== -1) {
-          const end = htmlContent.indexOf(' -->', start);
-          if (end !== -1) {
-            impl.page = htmlContent.substring(start + marker.length, end);
-          }
-        }
-      }
-
-      implementations.push(impl)
     }
-
-    const finalResult = { suggested_events: implementations }
-
-    // Persistencia en Supabase
-    if (client?.name) {
-      const savedClient = await db.saveClient(client)
-      await db.saveTrackingPlan(savedClient.id, finalResult)
-    }
-
-    res.json(finalResult)
+    
+    const impl = await generateImplementation(payload)
+    impl.event_name = eventName
+    impl.page = client?.url ? `/${client.url.split('/').slice(1).join('/') || ''}` : "Global"
+    
+    res.json(impl)
   } catch (error) {
-    console.error('[API] Error Plan:', error)
+    console.error(`[API] Error Plan Event (${req.body.eventName}):`, error)
     res.status(500).json({ error: error.message })
   }
 })
 
-const PORT = 3000
+// 2b. Endpoint: Consolida y guarda el plan completo (para persistencia post-granular)
+app.post('/api/plan/save', async (req, res) => {
+  try {
+    const { client, suggested_events } = req.body
+    if (!suggested_events || !suggested_events.length) {
+      return res.status(400).json({ error: 'No events to save' })
+    }
+
+    console.log(`[API] Guardando plan CONSOLIDADO para ${client?.name} (${suggested_events.length} eventos)`)
+    
+    if (client?.name) {
+      const savedClient = await db.saveClient(client)
+      const finalResult = { suggested_events }
+      await db.saveTrackingPlan(savedClient.id, finalResult)
+      res.json({ success: true, client_id: savedClient.id })
+    } else {
+      res.status(400).json({ error: 'Client identification missing' })
+    }
+  } catch (error) {
+    console.error('[API] Error guardando plan:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// 2c. Endpoint: Legacy / Bulk Plan (Consolidado)
+app.post('/api/plan', async (req, res) => {
+  try {
+    const { client, eventsToImplement, htmlContent } = req.body
+    if (!eventsToImplement || !eventsToImplement.length) {
+      return res.status(400).json({ error: 'No events selected' })
+    }
+
+    console.log(`[API] Solicitud de Plan BULK recibida para ${eventsToImplement.length} eventos de ${client?.name}`)
+    const implementations = []
+
+    for (const eventName of eventsToImplement) {
+      const payload = {
+        client,
+        intent: `Produce a complete tracking plan implementation for the event: ${eventName}.`,
+        captured: { click_element_html: htmlContent }
+      }
+      const impl = await generateImplementation(payload)
+      impl.event_name = eventName
+      implementations.push(impl)
+    }
+
+    const finalResult = { suggested_events: implementations }
+    if (client?.name) {
+      const savedClient = await db.saveClient(client)
+      await db.saveTrackingPlan(savedClient.id, finalResult)
+    }
+    res.json(finalResult)
+  } catch (error) {
+    console.error('[API] Error Plan Bulk:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+const PORT = process.env.PORT || 3000
 const HOST = '0.0.0.0'
 app.listen(PORT, HOST, () => {
-  console.log(`🚀 GTMXpert API Backend corriendo en http://${HOST}:${PORT}`)
+  console.log(`🚀 GTMXpert API corriendo en puerto: ${PORT}`)
 })

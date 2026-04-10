@@ -39,3 +39,19 @@ Este proyecto está configurado para ser desplegado fácilmente en Vercel.
 2. Define el **Framework Preset** como `Vite`.
 3. Configura las **Variables de Entorno** (`GOOGLE_API_KEY`, `SUPABASE_URL`, etc.).
 4. (Opcional) Si separas el backend del frontend, el `server.js` debe subirse o configurarse en entornos como Render/Railway, ya que Vercel ejecutará preferiblemente rutinas de entorno "Serverless Functions" o requiere que configures `api/` a través del `vercel.json`.
+
+---
+
+## 🚀 Despliegue en Google Cloud Run (Recomendado)
+
+Para procesos de larga duración (IA) y estabilidad, se recomienda Google Cloud Run:
+
+1.  **Construir y Subir Imagen**:
+    ```bash
+    gcloud builds submit --tag gcr.io/TU-PROYECTO/gtmxpert
+    ```
+2.  **Desplegar**:
+    ```bash
+    gcloud run deploy gtmxpert --image gcr.io/TU-PROYECTO/gtmxpert --platform managed --allow-unauthenticated --memory 2Gi
+    ```
+3.  **Variables de Entorno**: Configura `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` y `GOOGLE_API_KEY` en la consola de Cloud Run.

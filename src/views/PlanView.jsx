@@ -162,6 +162,7 @@ export default function PlanView({ plan, navigate }) {
   const [exporting, setExporting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [activeImpls, setActiveImpls] = useState([])
+  const [eventStatuses, setEventStatuses] = useState({}) // { eventName: 'loading' | 'completed' | 'error' } 
   const [error, setError] = useState(null)
   const [activeIdx, setActiveIdx] = useState(0)
 
@@ -173,33 +174,108 @@ export default function PlanView({ plan, navigate }) {
       return
     }
 
-    async function fetchPlan() {
+    if (plan.selected && plan.selected.length > 0) {
+      fetchAllEvents(plan.selected)
+    }
+  }, [plan])
+
+  async function fetchAllEvents(eventList) {
+    setLoading(true)
+    setError(null)
+    
+    // Inicializar estados
+    const initialStatuses = {}
+    eventList.forEach(name => initialStatuses[name] = 'pending')
+    setEventStatuses(initialStatuses)
+
+    const combinedHtml = (plan.pages || []).map(p => `<!-- PAGE: /${p.name} -->\n${p.html}`).join('\n\n')
+    const results = []
+
+    for (let i = 0; i < eventList.length; i++) {
+      const eventName = eventList[i]
+      setEventStatuses(prev => ({ ...prev, [eventName]: 'loading' }))
+      
       try {
-        const combinedHtml = (plan.pages || []).map(p => `<!-- PAGE: /${p.name} -->\n${p.html}`).join('\n\n')
-        
-        const res = await fetch('/api/plan', {
+        const res = await fetch('/api/plan/event', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             client: plan.client,
-            eventsToImplement: plan.selected,
+            eventName: eventName,
             htmlContent: combinedHtml
           })
         })
+        
         const data = await res.json()
         if (res.ok) {
-          setActiveImpls(data.suggested_events || [])
+          results.push(data)
+          setActiveImpls([...results]) // Update UI live
+          setEventStatuses(prev => ({ ...prev, [eventName]: 'completed' }))
         } else {
-          setError(data.error)
+          setEventStatuses(prev => ({ ...prev, [eventName]: 'error' }))
+          console.error(`Error en evento ${eventName}:`, data.error)
         }
       } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
+        setEventStatuses(prev => ({ ...prev, [eventName]: 'error' }))
+        console.error(`Error fetch ${eventName}:`, err.message)
       }
     }
-    fetchPlan()
-  }, [plan])
+
+    setLoading(false)
+
+    // Persistir en Supabase si hay resultados
+    if (results.length > 0 && plan.client?.name) {
+      try {
+        await fetch('/api/plan/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client: plan.client,
+            suggested_events: results
+          })
+        })
+        console.log('[PlanView] Plan guardado en Supabase ✓')
+      } catch (saveErr) {
+        console.warn('[PlanView] Error guardando plan (no crítico):', saveErr.message)
+      }
+    }
+  }
+
+  const handleRetryEvent = async (eventName, idx) => {
+    setEventStatuses(prev => ({ ...prev, [eventName]: 'loading' }))
+    const combinedHtml = (plan.pages || []).map(p => `<!-- PAGE: /${p.name} -->\n${p.html}`).join('\n\n')
+
+    try {
+      const res = await fetch('/api/plan/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client: plan.client,
+          eventName: eventName,
+          htmlContent: combinedHtml
+        })
+      })
+      
+      const data = await res.json()
+      if (res.ok) {
+        setActiveImpls(prev => {
+          const next = [...prev]
+          const existingIdx = next.findIndex(impl => impl.event_name === eventName)
+          if (existingIdx !== -1) {
+            next[existingIdx] = data
+          } else {
+            next.push(data)
+          }
+          return next
+        })
+        setEventStatuses(prev => ({ ...prev, [eventName]: 'completed' }))
+      } else {
+        setEventStatuses(prev => ({ ...prev, [eventName]: 'error' }))
+      }
+    } catch (err) {
+      setEventStatuses(prev => ({ ...prev, [eventName]: 'error' }))
+    }
+  }
 
   const handleExport = async () => {
     setExporting(true)
@@ -213,6 +289,11 @@ export default function PlanView({ plan, navigate }) {
   }
 
   const client = plan?.client || {}
+  const completedCount = Object.values(eventStatuses).filter(s => s === 'completed').length
+  // En modo historial, plan.selected no existe — derivamos la lista de eventos de activeImpls
+  const isHistoryMode = !plan.selected || plan.selected.length === 0
+  const eventList = isHistoryMode ? activeImpls.map(impl => impl.event_name) : plan.selected
+  const totalCount = eventList.length
 
   return (
     <div className="px-8 py-10 max-w-5xl mx-auto">
@@ -229,9 +310,11 @@ export default function PlanView({ plan, navigate }) {
               {client.name || 'Cliente'} · {client.url || ''}
             </p>
             <h1 className="text-3xl font-display font-black text-gray-900 dark:text-white mb-1 transition-colors">Plan de Tracking</h1>
-            <p className="text-gray-500 dark:text-white/40 text-sm transition-colors">{loading ? '...' : activeImpls.length} eventos · Gemini 2.5 Pro · Estándar ESES v1.0</p>
+            <p className="text-gray-500 dark:text-white/40 text-sm transition-colors">
+              {loading ? `Generando ${completedCount}/${totalCount}...` : `${activeImpls.length} eventos generados`} · Gemini 2.5 Pro · Estándar ESES v1.0
+            </p>
           </div>
-          {!loading && !error && activeImpls.length > 0 && (
+          {activeImpls.length > 0 && (
             <div className="flex items-center gap-2">
               <button
                 onClick={() => exportToMarkdown(activeImpls, client.name)}
@@ -247,7 +330,7 @@ export default function PlanView({ plan, navigate }) {
               </button>
               <button
                 onClick={handleExport}
-                disabled={exporting}
+                disabled={exporting || activeImpls.length === 0}
                 className="shrink-0 flex items-center gap-2 px-5 py-3 bg-brand-boreal text-brand-carbon font-display font-black uppercase tracking-widest rounded-xl text-xs hover:shadow-xl hover:shadow-brand-boreal/20 transition-all disabled:opacity-50"
               >
                 {exporting ? (
@@ -264,42 +347,69 @@ export default function PlanView({ plan, navigate }) {
         </div>
       </motion.div>
 
-      {loading && (
-        <div className="flex flex-col items-center justify-center py-24">
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }} className="w-12 h-12 rounded-full border-2 border-brand-boreal/20 border-t-brand-boreal mb-6" />
-          <p className="text-gray-700 dark:text-white/60 text-sm font-display font-bold transition-colors">Gemini 2.5 Pro generando implementación...</p>
-          <p className="text-gray-500 dark:text-white/20 text-xs mt-1 transition-colors">Estructurando dataLayer, redactando estrategias y conectando {plan?.selected?.length || 0} eventos</p>
+      {/* Progress Bar (Visible during loading) */}
+      {loading && totalCount > 0 && (
+        <div className="w-full h-1 bg-gray-200 dark:bg-white/5 rounded-full mb-8 overflow-hidden">
+          <motion.div 
+            className="h-full bg-brand-boreal"
+            initial={{ width: 0 }}
+            animate={{ width: `${(completedCount / totalCount) * 100}%` }}
+          />
         </div>
       )}
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-5 text-center">
-          <p className="text-red-400 font-bold mb-1">Error generando el plan</p>
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-5 text-center mb-8">
+          <p className="text-red-400 font-bold mb-1">Error crítico</p>
           <p className="text-red-400/60 text-sm">{error}</p>
+          <button onClick={() => fetchAllEvents(plan.selected)} className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg text-xs font-bold uppercase">Reintentar Todo</button>
         </div>
       )}
 
       {/* Event Tabs navigation */}
-      {!loading && !error && activeImpls.length > 0 && (
+      {(loading || activeImpls.length > 0) && (
         <>
           <div className="flex gap-2 mb-6 overflow-x-auto pb-1 custom-scrollbar">
-            {activeImpls.map((impl, i) => (
-          <button
-            key={i}
-            onClick={() => setActiveIdx(i)}
-            className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-display font-bold uppercase tracking-widest transition-all ${activeIdx === i ? 'bg-brand-boreal text-brand-carbon shadow-md' : 'bg-white dark:bg-white/5 text-gray-500 dark:text-white/40 hover:text-gray-900 dark:hover:text-white/70 hover:bg-gray-50 dark:hover:bg-white/10 border border-gray-200 dark:border-white/8 shadow-sm dark:shadow-none'}`}
-          >
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-black ${activeIdx === i ? 'bg-brand-carbon/20' : 'bg-gray-100 dark:bg-white/10'}`}>{i + 1}</span>
-            <span className="font-mono normal-case">{impl.event_name}</span>
-          </button>
-        ))}
-      </div>
+            {eventList.map((eventName, i) => {
+              const status = isHistoryMode ? 'completed' : eventStatuses[eventName]
+              const implIdx = activeImpls.findIndex(impl => impl.event_name === eventName)
+              return (
+                <button
+                  key={i}
+                  disabled={status === 'pending'}
+                  onClick={() => { if (implIdx !== -1) setActiveIdx(implIdx) }}
+                  className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-display font-bold uppercase tracking-widest transition-all ${implIdx === activeIdx && implIdx !== -1 ? 'bg-brand-boreal text-brand-carbon shadow-md' : 'bg-white dark:bg-white/5 text-gray-500 dark:text-white/40 hover:text-gray-900 dark:hover:text-white/70 hover:bg-gray-50 dark:hover:bg-white/10 border border-gray-200 dark:border-white/8 shadow-sm dark:shadow-none'} ${status === 'pending' ? 'opacity-40 grayscale cursor-not-allowed' : ''}`}
+                >
+                  {status === 'loading' && <motion.span animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-3 h-3 border border-current border-t-transparent rounded-full" />}
+                  {status === 'completed' && <span className="text-brand-polar dark:text-brand-boreal">✓</span>}
+                  {status === 'error' && <span className="text-red-500">⚠</span>}
+                  <span className="font-mono normal-case">{eventName}</span>
+                </button>
+              )
+            })}
+          </div>
 
-      {/* Active implementation */}
-      <AnimatePresence mode="wait">
-        <motion.div key={activeIdx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15 }}>
-          <EventImplementation impl={activeImpls[activeIdx]} />
-        </motion.div>
+          {/* Active implementation or Loading State */}
+          <AnimatePresence mode="wait">
+            <motion.div key={activeIdx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15 }}>
+              {activeImpls[activeIdx] ? (
+                <EventImplementation impl={activeImpls[activeIdx]} />
+              ) : (
+                <div className="p-20 flex flex-col items-center justify-center bg-white dark:bg-white/5 rounded-2xl border border-dashed border-gray-200 dark:border-white/10 text-center">
+                  {loading ? (
+                    <>
+                      <motion.div animate={{ rotate: 360, scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }} className="text-3xl mb-4">⚙️</motion.div>
+                      <p className="text-sm font-bold text-gray-500 dark:text-white/40">Generando planes secuencialmente...</p>
+                    </>
+                  ) : (
+                    <div className="p-4">
+                      <p className="text-red-500 text-sm font-bold mb-4">No se pudo generar este evento.</p>
+                      <button onClick={() => handleRetryEvent(eventList[activeIdx], activeIdx)} className="px-6 py-2 bg-brand-carbon dark:bg-brand-boreal text-brand-boreal dark:text-brand-carbon rounded-xl text-xs font-black uppercase tracking-widest">Reintentar Evento</button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </motion.div>
           </AnimatePresence>
 
           {/* Prev/Next navigation */}
@@ -311,10 +421,10 @@ export default function PlanView({ plan, navigate }) {
             >
               ← Evento anterior
             </button>
-            <span className="text-xs text-gray-400 dark:text-white/20 transition-colors">{activeIdx + 1} / {activeImpls.length}</span>
+            <span className="text-xs text-gray-400 dark:text-white/20 transition-colors">{activeIdx + 1} / {activeImpls.length || totalCount}</span>
             <button
-              onClick={() => setActiveIdx(i => Math.min(activeImpls.length - 1, i + 1))}
-              disabled={activeIdx === activeImpls.length - 1}
+              onClick={() => setActiveIdx(i => Math.min(Math.max(activeImpls.length - 1, 0), i + 1))}
+              disabled={activeIdx >= (activeImpls.length - 1)}
               className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white disabled:opacity-20 transition-colors"
             >
               Evento siguiente →

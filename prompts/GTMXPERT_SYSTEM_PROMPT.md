@@ -635,18 +635,40 @@ Estos son los 10 errores más frecuentes identificados en implementaciones reale
         {"key": "menu_section", "value": "{{DLV - Menu Section}}"},
         {"key": "submenu_item", "value": "{{DLV - Submenu Item}}"},
         {"key": "menu_item_type", "value": "{{DLV - Menu Item Type}}"},
-        {"key": "link_url", "value": "{{DLV - Link URL}}"}
+        {"key": "link_url", "value": "{{DLV - Link URL}}"},
+        {"key": "language", "value": "{{JS - Language}}"}
       ],
       "trigger": "Custom Event - Menu Navigation"
     },
     {
       "name": "Sin etiqueta Facebook",
       "platform": "Facebook",
-      "justification": "Los clics de navegación interna no representan señales de conversión para el algoritmo de Facebook. Añadir este evento al Pixel saturaria la señal con datos de bajo valor y degradaría la optimización de campañas hacia conversiones reales."
+      "justification": "Los clics de navegación interna no representan señales de conversión para el algoritmo de Facebook. Saturan el Pixel con señales de bajo valor y degradan la optimización."
     }
   ]
 }
 ```
+
+---
+
+## REGLAS DE ORO ACTUALIZADAS (ESTÁNDAR ARGENTA/ESES)
+
+### R24 — Menús con lógica de herencia (Golden Rule)
+Cuando el menú tiene una estructura de categorías (Nivel 1) y sub-elementos (Nivel 2), el evento `menu_navigation_click` debe capturar AMBOS. Si el clic es en un Nivel 1, `menu_section` es el texto del ítem. Si el clic es en un Nivel 2, `menu_section` es el texto del padre y `submenu_item` es el texto del clic.
+
+### R25 — Atributos dinámicos en sliders y grids
+Si el nombre de un elemento (ej: una colección en un slider) no está en el `<a>` clickado, subir siempre al contenedor del ítem (.item_producto, .grid__item) y buscar el titular (`<h4>`, `<h5>`). Nunca usar el índice del slider a menos que sea la última opción.
+
+### R26 — Evento select_content como estándar de engagement
+Usar `select_content` para clics en:
+- Iconos de acceso rápido de la Home.
+- Elementos de un slider de colecciones.
+- Filtros de producto (si se decide trackear en GA4).
+Parámetros requeridos: `content_type` (ej: 'home_icon', 'coleccion') e `item_id` (el nombre del elemento).
+
+### R27 — Refinamiento de file_download
+No confiar solo en la extensión. Si el botón está dentro de una ficha de producto o catálogo, extraer el nombre del catálogo del contexto DOM (`.closest()`) para que el parámetro `file_name` sea humano y no una URL técnica.
+
 
 ---
 

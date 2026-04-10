@@ -1,0 +1,444 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Tracking Plan: Venux</title>
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1B1B1A; max-width: 900px; margin: 0 auto; padding: 60px 40px; background: #F8F8F8; }
+            .card { background: white; border: 1px solid #E5E5E5; border-radius: 16px; padding: 40px; margin-bottom: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
+            header { margin-bottom: 60px; border-bottom: 3px solid #82FF7A; padding-bottom: 20px; }
+            h1 { font-size: 32px; font-weight: 900; margin: 0; color: #1B1B1A; }
+            h2 { font-size: 24px; font-weight: 900; color: #1B1B1A; margin-top: 0; border-left: 5px solid #82FF7A; padding-left: 15px; }
+            h3 { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #888; margin-top: 30px; margin-bottom: 10px; }
+            h4 { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+            .rationale { background: #F0FFF0; padding: 20px; border-radius: 12px; font-style: italic; border: 1px solid #D1F2D1; margin: 20px 0; }
+            .strategy { background: #F0F7FF; padding: 15px; border-radius: 8px; border-left: 4px solid #0070F3; margin-bottom: 25px; font-size: 14px; }
+            pre { background: #1B1B1A; color: #82FF7A; padding: 20px; border-radius: 12px; overflow-x: auto; font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 13px; line-height: 1.5; }
+            table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 14px; }
+            th, td { border-bottom: 1px solid #EEE; padding: 12px 15px; text-align: left; }
+            th { background-color: #FAFAFA; color: #666; font-weight: 700; }
+            .tag-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; margin-right: 8px; text-transform: uppercase; }
+            .ga4 { background: #FFEDD5; color: #EA580C; }
+            .facebook { background: #DBEAFE; color: #2563EB; }
+            .checklist-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; font-size: 14px; }
+            .checkbox { width: 16px; height: 16px; border: 2px solid #82FF7A; border-radius: 4px; flex-shrink: 0; margin-top: 3px; }
+            .footer { text-align: center; font-size: 12px; color: #AAA; margin-top: 80px; }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>GTMXpert · Venux</h1>
+            <p><strong>Tracking Plan Implementation Guide</strong> · 26/3/2026</p>
+        </header>
+    
+        <div class="card">
+            <h2>1. generate_lead</h2>
+            <p><small>Página: <code>/contacto</code></small></p>
+            
+            <div class="rationale">
+                <strong>Justificación Estratégica:</strong><br>
+                El formulario de contacto es el principal punto de conversión del sitio web, transformando a un visitante anónimo en un lead conocido. Medir cada envío exitoso es fundamental para evaluar la eficacia de las campañas de marketing, calcular el coste por lead y entender qué canales generan más oportunidades de negocio.
+            </div>
+
+            <div class="strategy">
+                <strong>Estrategia de Captura:</strong><br>
+                El formulario se carga dinámicamente vía JavaScript y su envío se procesa con AJAX. El trigger nativo de GTM 'Envío de formulario' no funcionará. La estrategia robusta es usar un trigger de 'Visibilidad de elemento' que detecte la aparición del mensaje de éxito tras el envío. Este método es fiable para formularios AJAX.
+            </div>
+
+            <div class="section">
+                <h3>Variables JavaScript</h3>
+                
+                    <div style="margin-bottom: 20px;">
+                        <strong>C - Form ID - Contacto</strong> <span style="color:#888; font-size: 12px;">(Constante)</span>
+                        <pre><code>contacto_clickdimensions</code></pre>
+                        <p style="font-size: 12px; color: #666;">Devuelve: <code>El valor estático 'contacto_clickdimensions'.</code></p>
+                    </div>
+                
+                    <div style="margin-bottom: 20px;">
+                        <strong>JS - Language</strong> <span style="color:#888; font-size: 12px;">(JavaScript personalizado)</span>
+                        <pre><code>function() {
+  var path = window.location.pathname;
+  if (path.indexOf('/en/') !== -1) return 'en';
+  if (path.indexOf('/fr/') !== -1) return 'fr';
+  if (path.indexOf('/it/') !== -1) return 'it';
+  if (path.indexOf('/de/') !== -1) return 'de';
+  return 'es';
+}</code></pre>
+                        <p style="font-size: 12px; color: #666;">Devuelve: <code>El código de idioma ('es', 'en', 'fr', 'it', 'de') basado en la ruta de la URL.</code></p>
+                    </div>
+                
+            </div>
+
+            <div class="section">
+                <h3>Trigger: Vis - Form Success - Contacto</h3>
+                <p style="font-size: 14px; margin-bottom: 5px;">Tipo: <code>Visibilidad de elemento</code></p>
+                <table>
+                    <tr><th>Campo</th><th>Operador</th><th>Valor</th></tr>
+                    <tr><td>Selector de CSS</td><td>coincide con</td><td><code>.sv-body--completed-page</code></td></tr><tr><td>Page Path</td><td>contiene</td><td><code>/contact</code></td></tr>
+                </table>
+                <p style="font-size: 12px; color: #888; font-style: italic;">Nota: Se activa cuando aparece el mensaje de éxito del formulario. La condición de 'Page Path' es obligatoria (Regla R11) para asegurar que solo se active en las páginas de contacto (/contacto/, /en/contact/, etc.) y no en otras partes del sitio si se reutiliza el selector CSS.</p>
+            </div>
+
+            <div class="section">
+                <h3>Etiquetas y Píxeles</h3>
+                
+                    <div style="margin-bottom: 25px; border-bottom: 1px dashed #EEE; padding-bottom: 15px;">
+                        <span class="tag-badge ga4">GA4</span>
+                        <strong>GA4 - generate_lead - Contacto</strong>
+                        
+                        <table>
+                            <tr><th style="width: 40%;">Parámetro</th><th>Valor</th></tr>
+                            <tr><td>form_id</td><td><code>{{C - Form ID - Contacto}}</code></td></tr><tr><td>lead_type</td><td><code>contacto</code></td></tr><tr><td>language</td><td><code>{{JS - Language}}</code></td></tr>
+                        </table>
+                        
+                    </div>
+                    
+                    <div style="margin-bottom: 25px; border-bottom: 1px dashed #EEE; padding-bottom: 15px;">
+                        <span class="tag-badge facebook">Facebook</span>
+                        <strong>FB - Lead - Contacto Completado</strong>
+                        
+                        <table>
+                            <tr><th style="width: 40%;">Parámetro</th><th>Valor</th></tr>
+                            <tr><td>lead_type</td><td><code>contacto</code></td></tr><tr><td>content_type</td><td><code>formulario_contacto</code></td></tr>
+                        </table>
+                        <p style="font-size: 12px; color: #777; background: #FAFAFA; padding: 10px; border-radius: 6px;">Se utiliza el evento estándar 'Lead' porque el envío del formulario de contacto es una de las conversiones de mayor valor del sitio. Esto permite optimizar las campañas de Facebook directamente hacia la generación de leads cualificados.</p>
+                    </div>
+                    
+            </div>
+
+            <div class="section">
+                <h3>Checklist de Validación</h3>
+                <div style="margin-top: 15px;">
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>Abrir la página de contacto (ej: https://venuxsurfaces.com/contacto/) en el modo Vista Previa de GTM.</div>
+                        </div>
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>Rellenar el formulario con datos de prueba y hacer clic en el botón 'Complete'.</div>
+                        </div>
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>OBSERVAR EL DOM: Justo después del envío, inspeccionar el elemento del mensaje de confirmación/éxito que aparece. Anotar su clase o ID único.</div>
+                        </div>
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>VERIFICAR TRIGGER: Comprobar que el trigger 'Vis - Form Success - Contacto' se dispara. Si no lo hace, editar el 'Selector de CSS' en el trigger con la clase/ID que se ha observado en el paso anterior.</div>
+                        </div>
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>VERIFICAR ETIQUETAS: En el resumen de GTM, seleccionar el evento 'Element Visibility' y confirmar que las etiquetas 'GA4 - generate_lead - Contacto' y 'FB - Lead - Contacto Completado' se han disparado.</div>
+                        </div>
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>VERIFICAR GA4: En DebugView de GA4, buscar el evento 'generate_lead' y comprobar que los parámetros 'form_id', 'lead_type' y 'language' tienen los valores correctos.</div>
+                        </div>
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>VERIFICAR FACEBOOK: Usar la extensión 'Meta Pixel Helper' para confirmar que el evento 'Lead' se ha disparado con los parámetros correctos.</div>
+                        </div>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>2. contact_interaction</h2>
+            <p><small>Página: <code>/contacto</code></small></p>
+            
+            <div class="rationale">
+                <strong>Justificación Estratégica:</strong><br>
+                Medir las interacciones de contacto directo es fundamental para entender cómo los usuarios convierten su interés en una acción concreta. Este evento nos permite diferenciar qué canales de contacto (teléfono, email, redes sociales) son más efectivos, optimizar la página de contacto y proporcionar al equipo de marketing datos claros sobre la generación de leads directos, además de alimentar el píxel de Facebook con señales de alta intención.
+            </div>
+
+            <div class="strategy">
+                <strong>Estrategia de Captura:</strong><br>
+                Se utiliza un único activador de 'Solo enlaces' que se dispara en las páginas de contacto. Una variable JavaScript personalizada ('JS - Contact Method') inspecciona la URL del clic para identificar el tipo de interacción (tel:, mailto:, social media). Esto centraliza la lógica y simplifica el activador, haciéndolo más robusto.
+            </div>
+
+            <div class="section">
+                <h3>Variables JavaScript</h3>
+                
+                    <div style="margin-bottom: 20px;">
+                        <strong>JS - Contact Method</strong> <span style="color:#888; font-size: 12px;">(JavaScript personalizado)</span>
+                        <pre><code>function() {
+  var url = {{Click URL}};
+  if (!url) return undefined;
+  
+  if (url.indexOf('mailto:') === 0) {
+    return 'email';
+  }
+  if (url.indexOf('tel:') === 0) {
+    return 'phone';
+  }
+  if (url.indexOf('instagram.com') !== -1) {
+    return 'instagram';
+  }
+  if (url.indexOf('linkedin.com') !== -1) {
+    return 'linkedin';
+  }
+  if (url.indexOf('facebook.com') !== -1) {
+    return 'facebook';
+  }
+  
+  return undefined;
+}</code></pre>
+                        <p style="font-size: 12px; color: #666;">Devuelve: <code>El método de contacto basado en la URL del clic: 'email', 'phone', 'instagram', 'linkedin', 'facebook', o undefined si no coincide.</code></p>
+                    </div>
+                
+                    <div style="margin-bottom: 20px;">
+                        <strong>JS - Click Domain</strong> <span style="color:#888; font-size: 12px;">(JavaScript personalizado)</span>
+                        <pre><code>function() {
+  try {
+    var url = {{Click URL}};
+    if (!url || url.indexOf('mailto:') === 0 || url.indexOf('tel:') === 0) return undefined;
+    var start = url.indexOf('://');
+    if (start === -1) return undefined;
+    var domain = url.substring(start + 3);
+    var slash = domain.indexOf('/');
+    if (slash !== -1) domain = domain.substring(0, slash);
+    if (domain.indexOf('www.') === 0) domain = domain.substring(4);
+    return domain;
+  } catch(e) { return undefined; }
+}</code></pre>
+                        <p style="font-size: 12px; color: #666;">Devuelve: <code>El nombre de dominio limpio de una URL (ej: 'facebook.com'). Devuelve undefined para enlaces mailto: y tel:.</code></p>
+                    </div>
+                
+                    <div style="margin-bottom: 20px;">
+                        <strong>JS - Language</strong> <span style="color:#888; font-size: 12px;">(JavaScript personalizado)</span>
+                        <pre><code>function() {
+  var path = window.location.pathname;
+  if (path.indexOf('/en/') !== -1) return 'en';
+  if (path.indexOf('/fr/') !== -1) return 'fr';
+  if (path.indexOf('/it/') !== -1) return 'it';
+  if (path.indexOf('/de/') !== -1) return 'de';
+  return 'es';
+}</code></pre>
+                        <p style="font-size: 12px; color: #666;">Devuelve: <code>El código de idioma de dos letras ('es', 'en', 'fr', 'it', 'de') basado en la ruta de la página.</code></p>
+                    </div>
+                
+            </div>
+
+            <div class="section">
+                <h3>Trigger: Click - Contact Interaction</h3>
+                <p style="font-size: 14px; margin-bottom: 5px;">Tipo: <code>Solo enlaces</code></p>
+                <table>
+                    <tr><th>Campo</th><th>Operador</th><th>Valor</th></tr>
+                    <tr><td>Page Path</td><td>contiene</td><td><code>/contact</code></td></tr><tr><td>{{JS - Contact Method}}</td><td>no es igual a</td><td><code>undefined</code></td></tr>
+                </table>
+                <p style="font-size: 12px; color: #888; font-style: italic;">Nota: Este activador se dispara en cualquier clic de enlace en páginas que contengan '/contact' en la URL (cubriendo todos los idiomas). La segunda condición asegura que solo se active para los enlaces de contacto válidos (email, teléfono, redes sociales) que son identificados por la variable {{JS - Contact Method}}, ignorando todos los demás clics.</p>
+            </div>
+
+            <div class="section">
+                <h3>Etiquetas y Píxeles</h3>
+                
+                    <div style="margin-bottom: 25px; border-bottom: 1px dashed #EEE; padding-bottom: 15px;">
+                        <span class="tag-badge ga4">GA4</span>
+                        <strong>GA4 - contact_interaction - Clicks de Contacto</strong>
+                        
+                        <table>
+                            <tr><th style="width: 40%;">Parámetro</th><th>Valor</th></tr>
+                            <tr><td>contact_method</td><td><code>{{JS - Contact Method}}</code></td></tr><tr><td>link_domain</td><td><code>{{JS - Click Domain}}</code></td></tr><tr><td>language</td><td><code>{{JS - Language}}</code></td></tr>
+                        </table>
+                        
+                    </div>
+                    
+                    <div style="margin-bottom: 25px; border-bottom: 1px dashed #EEE; padding-bottom: 15px;">
+                        <span class="tag-badge facebook">Facebook</span>
+                        <strong>FB - StandardEvent - Contact</strong>
+                        
+                        <table>
+                            <tr><th style="width: 40%;">Parámetro</th><th>Valor</th></tr>
+                            <tr><td>content_category</td><td><code>{{JS - Contact Method}}</code></td></tr><tr><td>content_type</td><td><code>contact_point</code></td></tr>
+                        </table>
+                        <p style="font-size: 12px; color: #777; background: #FAFAFA; padding: 10px; border-radius: 6px;">Se utiliza el Standard Event 'Contact' de Facebook porque está diseñado específicamente para medir acciones de contacto directo (clics en teléfono, email), lo que proporciona una señal de conversión de alta calidad para la optimización de campañas publicitarias.</p>
+                    </div>
+                    
+            </div>
+
+            <div class="section">
+                <h3>Checklist de Validación</h3>
+                <div style="margin-top: 15px;">
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>GTM Vista Previa en /contacto/: Hacer clic en el enlace 'hello@venuxsurface.es'. Verificar que la etiqueta GA4 'contact_interaction' y FB 'Contact' se disparen.</div>
+                        </div>
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>Verificar en la pestaña Variables que {{JS - Contact Method}} devuelve 'email'.</div>
+                        </div>
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>Hacer clic en el número de teléfono. Verificar que las etiquetas se disparan y que {{JS - Contact Method}} devuelve 'phone'.</div>
+                        </div>
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>Hacer clic en el icono de Instagram. Verificar que las etiquetas se disparan y que {{JS - Contact Method}} devuelve 'instagram' y {{JS - Click Domain}} devuelve 'instagram.com'.</div>
+                        </div>
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>Repetir el paso anterior para LinkedIn y Facebook.</div>
+                        </div>
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>Hacer clic en un enlace del menú de navegación (ej: 'Home'). Verificar que las etiquetas de contacto NO se disparan.</div>
+                        </div>
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>GA4 DebugView: Confirmar la llegada del evento 'contact_interaction' con los parámetros 'contact_method', 'link_domain' y 'language' correctos para cada tipo de clic.</div>
+                        </div>
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>Facebook Pixel Helper: Confirmar que el evento 'Contact' se dispara con 'content_category' correspondiente al método de contacto.</div>
+                        </div>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>3. navigation_click</h2>
+            <p><small>Página: <code>/contacto</code></small></p>
+            
+            <div class="rationale">
+                <strong>Justificación Estratégica:</strong><br>
+                Medir los clics en la navegación principal es fundamental para entender cómo los usuarios interactúan con el sitio. Este evento permite identificar qué secciones son las más populares, qué elementos generan más interés y si existen puntos de fricción en la navegación. Los datos recogidos son clave para optimizar la arquitectura de la información y mejorar la experiencia de usuario.
+            </div>
+
+            <div class="strategy">
+                <strong>Estrategia de Captura:</strong><br>
+                Se utilizará una etiqueta Custom HTML con un listener de eventos de clic en el <header>. Esta estrategia es necesaria para diferenciar de forma fiable entre los distintos tipos de menús (primario, social, idioma) y para extraer el texto del enlace correctamente, incluso si el usuario hace clic en un elemento hijo (un <span> o <img> dentro del <a>). El script empujará los datos contextuales al dataLayer, que serán leídos por variables y enviados a GA4.
+            </div>
+
+            <div class="section">
+                <h3>Variables JavaScript</h3>
+                
+                    <div style="margin-bottom: 20px;">
+                        <strong>JS - Language</strong> <span style="color:#888; font-size: 12px;">(JavaScript personalizado)</span>
+                        <pre><code>function() {
+  var path = window.location.pathname;
+  if (path.indexOf('/en/') !== -1) return 'en';
+  if (path.indexOf('/fr/') !== -1) return 'fr';
+  if (path.indexOf('/it/') !== -1) return 'it';
+  if (path.indexOf('/de/') !== -1) return 'de';
+  return 'es';
+}</code></pre>
+                        <p style="font-size: 12px; color: #666;">Devuelve: <code>El código de idioma basado en la ruta URL ('es', 'en', 'fr', 'it', 'de').</code></p>
+                    </div>
+                
+                    <div style="margin-bottom: 20px;">
+                        <strong>DLV - Menu Location</strong> <span style="color:#888; font-size: 12px;">(Capa de datos)</span>
+                        <pre><code>menu_location</code></pre>
+                        <p style="font-size: 12px; color: #666;">Devuelve: <code>La ubicación del menú, ej: 'header'.</code></p>
+                    </div>
+                
+                    <div style="margin-bottom: 20px;">
+                        <strong>DLV - Menu Section</strong> <span style="color:#888; font-size: 12px;">(Capa de datos)</span>
+                        <pre><code>menu_section</code></pre>
+                        <p style="font-size: 12px; color: #666;">Devuelve: <code>La sección del menú, ej: 'primary_nav', 'secondary_nav', 'social_links', 'language_switcher'.</code></p>
+                    </div>
+                
+                    <div style="margin-bottom: 20px;">
+                        <strong>DLV - Menu Item Text</strong> <span style="color:#888; font-size: 12px;">(Capa de datos)</span>
+                        <pre><code>menu_item_text</code></pre>
+                        <p style="font-size: 12px; color: #666;">Devuelve: <code>El texto del enlace clickado, ej: 'Colecciones'.</code></p>
+                    </div>
+                
+                    <div style="margin-bottom: 20px;">
+                        <strong>DLV - Link URL</strong> <span style="color:#888; font-size: 12px;">(Capa de datos)</span>
+                        <pre><code>link_url</code></pre>
+                        <p style="font-size: 12px; color: #666;">Devuelve: <code>La URL de destino del enlace clickado.</code></p>
+                    </div>
+                
+            </div>
+
+            <div class="section">
+                <h3>Trigger: Custom - navigation_click</h3>
+                <p style="font-size: 14px; margin-bottom: 5px;">Tipo: <code>Evento personalizado</code></p>
+                <table>
+                    <tr><th>Campo</th><th>Operador</th><th>Valor</th></tr>
+                    <tr><td>Event</td><td>es igual a</td><td><code>navigation_click</code></td></tr>
+                </table>
+                <p style="font-size: 12px; color: #888; font-style: italic;">Nota: Este activador se dispara cuando la etiqueta Custom HTML empuja el evento 'navigation_click' al dataLayer tras un clic válido en un elemento de navegación.</p>
+            </div>
+
+            <div class="section">
+                <h3>Etiquetas y Píxeles</h3>
+                
+                    <div style="margin-bottom: 25px; border-bottom: 1px dashed #EEE; padding-bottom: 15px;">
+                        <span class="tag-badge ga4">GA4</span>
+                        <strong>GA4 - click - Navigation</strong>
+                        
+                        <table>
+                            <tr><th style="width: 40%;">Parámetro</th><th>Valor</th></tr>
+                            <tr><td>menu_location</td><td><code>{{DLV - Menu Location}}</code></td></tr><tr><td>menu_section</td><td><code>{{DLV - Menu Section}}</code></td></tr><tr><td>menu_item_text</td><td><code>{{DLV - Menu Item Text}}</code></td></tr><tr><td>link_url</td><td><code>{{DLV - Link URL}}</code></td></tr><tr><td>language</td><td><code>{{JS - Language}}</code></td></tr>
+                        </table>
+                        
+                    </div>
+                    
+                    <div style="margin-bottom: 25px; border-bottom: 1px dashed #EEE; padding-bottom: 15px;">
+                        <span class="tag-badge facebook">Facebook</span>
+                        <strong>Sin etiqueta Facebook</strong>
+                        <p><small>Sin parámetros específicos.</small></p>
+                        <p style="font-size: 12px; color: #777; background: #FAFAFA; padding: 10px; border-radius: 6px;">Los clics en la navegación interna son eventos de bajo valor para el algoritmo de Facebook. Enviarlos al Pixel saturaría la señal con interacciones que no indican una intención de conversión, lo que podría perjudicar la optimización de las campañas publicitarias. Este evento es solo para análisis de comportamiento en GA4.</p>
+                    </div>
+                    
+            </div>
+
+            <div class="section">
+                <h3>Checklist de Validación</h3>
+                <div style="margin-top: 15px;">
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>En GTM Vista Previa, hacer clic en 'Colecciones' del menú principal. Verificar que el evento 'navigation_click' se dispara.</div>
+                        </div>
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>Seleccionar el evento 'navigation_click' y revisar la pestaña 'Data Layer'. Los valores deben ser: menu_location: 'header', menu_section: 'primary_nav', menu_item_text: 'Colecciones'.</div>
+                        </div>
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>Hacer clic en el icono de 'Instagram' en el header. Verificar que los valores son: menu_section: 'social_links', menu_item_text: '→ Instagram'.</div>
+                        </div>
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>Hacer clic en el selector de idioma 'EN'. Verificar que los valores son: menu_section: 'language_switcher', menu_item_text: 'EN'.</div>
+                        </div>
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>En GA4 DebugView, buscar el evento 'click'. Expandirlo y confirmar que todos los parámetros personalizados (menu_location, menu_section, menu_item_text, link_url, language) se registran correctamente.</div>
+                        </div>
+                    
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div>Verificar en Facebook Pixel Helper que NINGÚN evento se dispara al hacer clic en los elementos del menú.</div>
+                        </div>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            Generado por GTMXpert (ESES Agency) · Standard v1.0
+        </div>
+    </body></html>
