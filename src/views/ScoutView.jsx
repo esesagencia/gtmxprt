@@ -186,7 +186,7 @@ export default function ScoutView({ navigate, client }) {
             <h3 className="font-display font-bold text-xs text-gray-500 dark:text-white/40 uppercase tracking-widest transition-colors">Cliente</h3>
             <input
               type="text" value={clientName} onChange={e => setClientName(e.target.value)}
-              placeholder="Argenta Cerámica"
+              placeholder="Nombre cliente"
               className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-white/20 focus:outline-none focus:border-brand-boreal/50 transition-colors"
             />
             <input

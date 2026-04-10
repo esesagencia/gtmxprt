@@ -1,12 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
-const stats = [
-  { label: 'Clientes activos', value: '2', delta: '+1 este mes' },
-  { label: 'Planes generados', value: '4', delta: '+2 esta semana' },
-  { label: 'Reglas aplicadas', value: '23', delta: 'ESES Standard v1' },
-  { label: 'Tiempo ahorrado', value: '~6h', delta: 'vs proceso manual' },
-]
+// Stats removed for a more direct/pill-based distribution
 
 export default function DashboardHome({ navigate }) {
   const [clients, setClients] = useState([])
@@ -60,78 +55,71 @@ export default function DashboardHome({ navigate }) {
 
   return (
     <div className="px-8 py-10 max-w-6xl mx-auto">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-10"
-      >
-        <p className="text-xs text-brand-boreal font-display font-bold uppercase tracking-widest mb-2">
-          ESES Agency · Motor GTM
-        </p>
-        <h1 className="text-4xl font-display font-black text-gray-900 dark:text-white mb-3 transition-colors">
-          GTMXpert Dashboard
-        </h1>
-        <p className="text-gray-500 dark:text-white/40 text-sm max-w-xl transition-colors">
-          Genera implementaciones GTM perfectas en segundos. Carga el HTML de cualquier página, y el motor de IA detecta qué trackear y cómo.
-        </p>
-      </motion.div>
-
-      {/* Stats Row */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="grid grid-cols-4 gap-4 mb-10"
-      >
-        {stats.map((s, i) => (
-          <div key={i} className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/8 rounded-2xl p-5 shadow-sm dark:shadow-none transition-colors">
-            <p className="text-3xl font-display font-black text-brand-boreal">{s.value}</p>
-            <p className="text-sm text-gray-700 dark:text-white/80 mt-1 font-medium transition-colors">{s.label}</p>
-            <p className="text-xs text-gray-500 dark:text-white/30 mt-1 transition-colors">{s.delta}</p>
-          </div>
-        ))}
-      </motion.div>
-
-      {/* Quick Actions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="grid grid-cols-2 gap-4 mb-10"
-      >
-        <button
-          onClick={() => navigate('scout')}
-          className="group relative bg-brand-boreal text-brand-carbon rounded-2xl p-6 text-left overflow-hidden hover:shadow-2xl hover:shadow-brand-boreal/20 transition-all duration-300"
+      {/* Hero Section / Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        {/* Welcome Pill */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4 }}
+          className="relative overflow-hidden bg-gradient-to-br from-brand-slate/50 to-brand-carbon/30 dark:from-white/5 dark:to-transparent border border-gray-200 dark:border-white/10 rounded-[2.5rem] p-8 flex flex-col justify-center min-h-[220px] backdrop-blur-md group transition-all duration-500"
         >
-          <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-16 translate-x-16 group-hover:translate-x-12 transition-transform duration-500" />
-          <p className="text-3xl mb-2">🔍</p>
-          <h3 className="font-display font-black text-xl mb-1">Analizar nueva página</h3>
-          <p className="text-brand-carbon/60 text-sm">Pega el HTML y el Scout detecta automáticamente todos los puntos de tracking</p>
-          <span className="mt-4 inline-flex items-center gap-2 text-xs font-display font-bold uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity">
-            Iniciar Scout →
-          </span>
-        </button>
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-brand-boreal/5 rounded-full blur-3xl group-hover:bg-brand-boreal/10 transition-colors duration-700" />
+          <p className="text-xs text-brand-boreal font-display font-black uppercase tracking-[0.2em] mb-4">ESES Agency · GTMXpert</p>
+          <h2 className="text-4xl md:text-5xl font-display font-black text-gray-900 dark:text-white leading-tight">
+            Yeeeeep. <br />
+            <span className="text-brand-boreal">¡Vamos a empezar un nuevo etiquetado!</span>
+          </h2>
+        </motion.div>
 
-        <div className="grid grid-rows-2 gap-4">
-          <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/8 rounded-2xl p-5 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-white/8 shadow-sm dark:shadow-none transition-colors cursor-pointer">
-            <span className="text-2xl">📄</span>
+        {/* Scout Pill (Primary CTA) */}
+        <motion.button
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          onClick={() => navigate('scout')}
+          className="relative overflow-hidden group bg-brand-boreal text-brand-carbon rounded-[2.5rem] p-8 flex flex-col justify-between hover:shadow-[0_0_50px_-12px_rgba(130,255,122,0.4)] transition-all duration-500 text-left"
+        >
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-2xl -translate-y-32 translate-x-32 group-hover:-translate-y-24 group-hover:translate-x-24 transition-transform duration-700" />
+          
+          <div className="flex justify-between items-start">
+            <div className="w-14 h-14 bg-brand-carbon rounded-2xl flex items-center justify-center text-3xl shadow-lg group-hover:scale-110 transition-transform duration-500">
+              🔍
+            </div>
+            <div className="text-brand-carbon/40 font-display font-black text-6xl select-none">01</div>
+          </div>
+
+          <div>
+            <h3 className="text-2xl font-display font-black mb-2">Analizar nueva página</h3>
+            <p className="text-brand-carbon/70 text-sm max-w-[280px] leading-relaxed">
+              Detecta automáticamente todos los puntos de interés enviando el HTML de tus páginas.
+            </p>
+            <div className="mt-6 flex items-center gap-2 font-display font-black uppercase tracking-widest text-xs">
+              <span className="w-8 h-px bg-brand-carbon/30 group-hover:w-12 transition-all duration-500" />
+              Iniciar ahora
+            </div>
+          </div>
+        </motion.button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
+          <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/8 rounded-2xl p-5 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-white/8 shadow-sm dark:shadow-none transition-colors cursor-pointer group">
+            <div className="w-10 h-10 bg-gray-100 dark:bg-white/5 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform">📄</div>
             <div>
               <h4 className="font-display font-bold text-sm text-gray-900 dark:text-white transition-colors">Estándar ESES v1.0</h4>
               <p className="text-xs text-gray-500 dark:text-white/30 transition-colors">23 reglas técnicas activas · Prompt sincronizado</p>
             </div>
-            <span className="ml-auto text-xs bg-brand-boreal/10 text-brand-boreal px-2 py-1 rounded-lg font-bold">Activo</span>
+            <span className="ml-auto text-[10px] bg-brand-boreal/10 text-brand-boreal px-2.5 py-1 rounded-full font-black uppercase tracking-widest">Activo</span>
           </div>
-          <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/8 rounded-2xl p-5 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-white/8 shadow-sm dark:shadow-none transition-colors cursor-pointer">
-            <span className="text-2xl">🤖</span>
+          <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/8 rounded-2xl p-5 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-white/8 shadow-sm dark:shadow-none transition-colors cursor-pointer group">
+            <div className="w-10 h-10 bg-gray-100 dark:bg-white/5 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform">🤖</div>
             <div>
               <h4 className="font-display font-bold text-sm text-gray-900 dark:text-white transition-colors">Motor IA</h4>
               <p className="text-xs text-gray-500 dark:text-white/30 transition-colors">Motor GTMXpert por ESES Agency activo</p>
             </div>
-            <span className="ml-auto text-xs bg-brand-boreal/10 text-brand-boreal px-2 py-1 rounded-lg font-bold">Gemini 2.5 Pro</span>
+            <span className="ml-auto text-[10px] bg-brand-boreal/10 text-brand-boreal px-2.5 py-1 rounded-full font-black uppercase tracking-widest">Gemini 2.5 Pro</span>
           </div>
-        </div>
-      </motion.div>
+      </div>
 
       {/* Clients */}
       <motion.div
