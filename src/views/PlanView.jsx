@@ -196,7 +196,7 @@ export default function PlanView({ plan, navigate }) {
       setEventStatuses(prev => ({ ...prev, [eventName]: 'loading' }))
       
       try {
-        const res = await fetch('/api/plan/event', {
+        const res = await fetch('/api/plan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -246,7 +246,7 @@ export default function PlanView({ plan, navigate }) {
     const combinedHtml = (plan.pages || []).map(p => `<!-- PAGE: /${p.name} -->\n${p.html}`).join('\n\n')
 
     try {
-      const res = await fetch('/api/plan/event', {
+      const res = await fetch('/api/plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
