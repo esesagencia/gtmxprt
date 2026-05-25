@@ -117,7 +117,12 @@ app.post('/api/plan', async (req, res) => {
       await db.saveTrackingPlan(savedClient.id, finalResult)
     }
 
-    res.json(finalResult)
+    // Si es llamada evento a evento (eventName singular), devolver solo la implementación
+    if (eventName && !eventsToImplement) {
+      res.json(implementations[0])
+    } else {
+      res.json(finalResult)
+    }
   } catch (error) {
     console.error('[API] Error Plan:', error)
     res.status(500).json({ error: error.message })
