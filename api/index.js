@@ -76,15 +76,16 @@ app.post('/api/scout', async (req, res) => {
 // POST /api/plan
 app.post('/api/plan', async (req, res) => {
   try {
-    const { client, eventsToImplement, htmlContent } = req.body
+    const { client, eventsToImplement, eventName, htmlContent } = req.body
+    const eventsList = eventsToImplement || (eventName ? [eventName] : [])
 
-    if (!eventsToImplement || !eventsToImplement.length) {
+    if (!eventsList || !eventsList.length) {
       return res.status(400).json({ error: 'No events selected' })
     }
 
     const implementations = []
 
-    for (const eventName of eventsToImplement) {
+    for (const eventName of eventsList) {
       const payload = {
         client,
         intent: `Produce a complete tracking plan implementation for the event: ${eventName}.`,
