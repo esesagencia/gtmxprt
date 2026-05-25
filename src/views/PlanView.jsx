@@ -223,21 +223,9 @@ export default function PlanView({ plan, navigate }) {
 
     setLoading(false)
 
-    // Persistir en Supabase si hay resultados
-    if (results.length > 0 && plan.client?.name) {
-      try {
-        await fetch('/api/plan/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            client: plan.client,
-            suggested_events: results
-          })
-        })
-        console.log('[PlanView] Plan guardado en Supabase ✓')
-      } catch (saveErr) {
-        console.warn('[PlanView] Error guardando plan (no crítico):', saveErr.message)
-      }
+    // Plan ya guardado en Firebase dentro de /api/plan
+    if (results.length > 0) {
+      console.log('[PlanView] Plan generado y guardado en Firebase ✓')
     }
   }
 
