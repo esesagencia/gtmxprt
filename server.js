@@ -3,7 +3,7 @@ import cors from 'cors'
 import 'dotenv/config'
 import { scoutPage } from './core/scout.js'
 import { generateImplementation } from './core/engine.js'
-import * as db from './core/supabase.js'
+import * as db from './core/firebase.js'
 import { slimHTML } from './core/slim-utils.js'
 
 import path from 'path'
