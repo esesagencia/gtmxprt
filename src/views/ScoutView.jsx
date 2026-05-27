@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { slimHTML } from '../utils/slimUtils'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // No mock data - fetching from backend directly
@@ -25,18 +26,22 @@ function PageCard({ page, onRemove }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-display font-bold text-gray-900 dark:text-white truncate transition-colors">/{page.name}</p>
-          <p className="text-xs text-gray-500 dark:text-white/30 transition-colors">{lineCount} líneas · {(page.html.length / 1024).toFixed(1)} KB</p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-xs text-gray-500 dark:text-white/30 transition-colors">{lineCount} líneas · {(page.html.length/1024).toFixed(1)} KB</p>
+            {page.rawSize && <span className="text-[10px] bg-brand-boreal/10 text-brand-boreal px-1.5 py-0.5 rounded-full font-bold">-{Math.round((1-page.html.length/page.rawSize)*100)}% slim</span>}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <button onClick={() => { navigator.clipboard.writeText(page.html) }} className="text-gray-400 hover:text-brand-boreal dark:text-white/20 dark:hover:text-brand-boreal transition-colors text-xs px-2 py-1" title="Copiar HTML">⎘</button>
           <button onClick={() => setExpanded(!expanded)} className="text-gray-400 hover:text-gray-900 dark:text-white/20 dark:hover:text-white/60 transition-colors text-xs px-2 py-1">
             {expanded ? '▲' : '▼'}
           </button>
-          <button onClick={() => onRemove(page.id)} className="text-gray-400 hover:text-red-500 dark:text-white/20 dark:hover:text-red-400 transition-colors text-sm">✕</button>
+          <button onClick={() => onRemove(page.id)} className="text-gray-400 hover:text-red-500 dark:text-white/20 dark:hover:text-red-400 transition-colors text-sm px-1">✕</button>
         </div>
       </div>
       {expanded && (
         <div className="border-t border-gray-100 dark:border-white/5 px-4 pb-3 transition-colors">
-          <pre className="text-xs text-gray-500 dark:text-white/40 font-mono mt-2 max-h-24 overflow-y-auto custom-scrollbar leading-relaxed transition-colors">
+          <pre className="text-xs text-gray-500 dark:text-white/40 font-mono mt-2 max-h-48 overflow-y-auto custom-scrollbar leading-relaxed transition-colors whitespace-pre-wrap break-all">
             {page.html.substring(0, 600)}{page.html.length > 600 ? '\n...' : ''}
           </pre>
         </div>
@@ -71,7 +76,7 @@ export default function ScoutView({ navigate, client }) {
   const handleAddPage = () => {
     if (!pageName.trim() || !pageHtml.trim()) return
     console.log(`[UI] Adding page: ${pageName}`)
-    setPages(prev => [...prev, { id: Date.now(), name: pageName.trim().toLowerCase().replace(/\//g, ''), html: pageHtml.trim() }])
+    const raw = pageHtml.trim(); setPages(prev => [...prev, { id: Date.now(), name: pageName.trim().toLowerCase().replace(/\//g, ''), html: slimHTML(raw), rawSize: raw.length }])
     setPageName('')
     setPageHtml('')
   }
@@ -85,7 +90,7 @@ export default function ScoutView({ navigate, client }) {
     const reader = new FileReader()
     reader.onload = (ev) => {
       const content = ev.target.result
-      setPages(prev => [...prev, { id: Date.now(), name: autoName, html: content }])
+      setPages(prev => [...prev, { id: Date.now(), name: autoName, html: slimHTML(content), rawSize: content.length }])
     }
     reader.readAsText(file)
     e.target.value = ''
@@ -272,6 +277,12 @@ export default function ScoutView({ navigate, client }) {
               <AnimatePresence>
                 {pages.map(p => <PageCard key={p.id} page={p} onRemove={handleRemovePage} />)}
               </AnimatePresence>
+            </div>
+          )}
+
+          {pages.length > 5 && (
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3 text-xs text-yellow-600 dark:text-yellow-400/80 leading-relaxed">
+              ⚠️ Más de 5 páginas puede causar timeout. Haz el scout en tandas — el inventario se acumula automáticamente.
             </div>
           )}
 

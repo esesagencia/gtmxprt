@@ -8,7 +8,7 @@ import { exportToMarkdown, exportToHTML } from '../utils/exportUtils'
 // ─── Event Implementation Card ────────────────────────────────────────────────
 function EventImplementation({ impl }) {
   const [tab, setTab] = useState('implementation')
-  const [openSections, setOpenSections] = useState({ variables: true, trigger: false, tags: false })
+  const [openSections, setOpenSections] = useState({ variables: true, trigger: false, tags: false, customHtml: true })
   const toggle = (s) => setOpenSections(p => ({ ...p, [s]: !p[s] }))
 
   return (
@@ -100,6 +100,29 @@ function EventImplementation({ impl }) {
                 </div>
               )}
             </div>
+            {/* Custom HTML */}
+            {impl.custom_html?.required && (
+              <div className="border border-yellow-500/20 rounded-xl overflow-hidden transition-colors">
+                <button onClick={() => toggle('customHtml')} className="w-full flex items-center justify-between px-4 py-3 bg-yellow-500/5 hover:bg-yellow-500/10 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-display font-bold uppercase tracking-widest text-yellow-500/80">Custom HTML</span>
+                    <span className="text-[10px] bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded-full font-bold">Requerido</span>
+                  </div>
+                  <span className="text-yellow-500/40 text-xs">{openSections.customHtml ? "▲" : "▼"}</span>
+                </button>
+                {openSections.customHtml && (
+                  <div className="px-4 pb-4 border-t border-yellow-500/10">
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs mb-3">
+                      <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-3"><p className="text-gray-500 dark:text-white/30 mb-0.5">Nombre</p><p className="text-gray-800 dark:text-white/80 font-mono font-bold">{impl.custom_html.name}</p></div>
+                      <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-3"><p className="text-gray-500 dark:text-white/30 mb-0.5">Disparador</p><p className="text-gray-800 dark:text-white/80 font-mono">{impl.custom_html.trigger}</p></div>
+                    </div>
+                    {impl.custom_html.reason && <p className="text-xs text-yellow-600 dark:text-yellow-400/70 italic leading-relaxed bg-yellow-500/5 rounded-lg px-3 py-2 mb-3">{impl.custom_html.reason}</p>}
+                    <pre className="bg-gray-900 dark:bg-gray-950 text-green-400 text-xs rounded-xl p-4 overflow-x-auto font-mono leading-relaxed whitespace-pre-wrap">{impl.custom_html.code}</pre>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Tags */}
             <div className="border border-gray-200 dark:border-white/5 rounded-xl overflow-hidden transition-colors">
               <button onClick={() => toggle('tags')} className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-white/3 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
@@ -202,7 +225,8 @@ export default function PlanView({ plan, navigate }) {
           body: JSON.stringify({
             client: plan.client,
             eventName: eventName,
-            htmlContent: combinedHtml
+            htmlContent: combinedHtml,
+            scoutPages: plan.scoutPages || {}
           })
         })
         

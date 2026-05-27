@@ -76,7 +76,7 @@ app.post('/api/scout', async (req, res) => {
 // POST /api/plan
 app.post('/api/plan', async (req, res) => {
   try {
-    const { client, eventsToImplement, eventName, htmlContent } = req.body
+    const { client, eventsToImplement, eventName, htmlContent, scoutPages } = req.body
     const eventsList = eventsToImplement || (eventName ? [eventName] : [])
 
     if (!eventsList || !eventsList.length) {
@@ -88,7 +88,7 @@ app.post('/api/plan', async (req, res) => {
     for (const eventName of eventsList) {
       const payload = {
         client,
-        intent: `Produce a complete tracking plan implementation for the event: ${eventName}.`,
+        intent: `Produce a complete tracking plan implementation for the event: ${eventName} (detected on page: ${scoutPages?.[eventName] || 'global'}).`,
         captured: {
           click_element_html: htmlContent || '<p>HTML Context lost.</p>'
         }
@@ -96,16 +96,7 @@ app.post('/api/plan', async (req, res) => {
 
       const impl = await generateImplementation(payload)
       impl.event_name = eventName
-      impl.page = 'Global'
-
-      if (htmlContent?.includes('<!-- PAGE: ')) {
-        const marker = '<!-- PAGE: '
-        const start = htmlContent.indexOf(marker)
-        if (start !== -1) {
-          const end = htmlContent.indexOf(' -->', start)
-          if (end !== -1) impl.page = htmlContent.substring(start + marker.length, end)
-        }
-      }
+      impl.page = (scoutPages && scoutPages[eventName]) ? scoutPages[eventName] : 'global'
 
       implementations.push(impl)
     }
